@@ -1,4 +1,4 @@
-close all; clear all; home;
+clear all; home;
 
 % define the data set folder
 dataSetFolder = '../../data/set-1/tilt-around-x-pointing-forward';
