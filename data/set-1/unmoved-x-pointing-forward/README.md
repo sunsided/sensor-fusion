@@ -1,7 +1,7 @@
 sensor data
 ===========
 
-These are measurements of an **unmoved system**.
+These are measurements of an **unmoved system** with the **x axis pointing forward**.
 
     Z = fix, up
     |
