@@ -93,6 +93,9 @@ plot3([O(1) y(1)], [O(2) y(2)], [O(3) y(3)], '-g', 'LineWidth', 1);
 plot3([O(1) z(1)], [O(2) z(2)], [O(3) z(3)], '-b', 'LineWidth', 1);
 
 axis equal;
+xlim([-1 1]);
+ylim([-1 1]);
+zlim([-1 1]);
 grid on;
 
 %set(ax, 'CameraUpVector', Z);
