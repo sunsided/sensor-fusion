@@ -19,7 +19,7 @@ function [accelerometer, magnetometer] =  loadCalibrationData
     else
         disp('Using existing accelerometer calibration data.');
     end
-    accelerometer = accelerometerCalibrationData
+    accelerometer = accelerometerCalibrationData;
     
 end
 
