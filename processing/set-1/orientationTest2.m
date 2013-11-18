@@ -75,8 +75,11 @@ zZ = cross(z, Z)
 azimuth = -atan2(xX(3),xY(3));
 azimuthd = azimuth * 180/pi
 
-heading = -atan2(yZ(3), zX(2));
-headingd = heading * 180/pi
+elevation = -atan2(yZ(3), zX(2));
+elevationd = elevation * 180/pi
+
+roll = -atan2(xY(2), xY(3));
+rolld = roll * 180/pi
 
 %% Plotting of the data
 
