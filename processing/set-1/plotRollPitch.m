@@ -9,6 +9,7 @@ dataSetFolder = '../../data/set-1/tilt-around-z-pointing-up';
 [accelerometer, ~, compass, ~] = loadData(dataSetFolder);
 
 % Calibrate data
+accelerometer = calibrateAccelerometer(accelerometer);
 compass = calibrateCompass(compass);
 
 % Extract data for plotting
