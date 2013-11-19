@@ -27,8 +27,16 @@ m = [1; 0; 0.5];
 %}
 
 % Roll test
-a = [0; 0.5; 1];
-m = [1; 0; 0];
+control_roll = 45;
+control_yaw = 90;
+control_pitch = 45;
+
+xref = rotateYPRd([1; 0; 0], control_roll, control_pitch, control_yaw);
+yref = rotateYPRd([0; 1; 0], control_roll, control_pitch, control_yaw);
+zref = rotateYPRd([0; 0; 1], control_roll, control_pitch, control_yaw);
+
+a = zref;
+m = xref;
 
 %% Define local coordinate system
 
@@ -53,9 +61,40 @@ X = mn;             % X is already normalised
 % calculate global Y by crossing X and Z
 Y = cross(Z, X);    % Y is already normalised
 
-% For debugging purposes, re-generate X from Z and Y
-%X = cross(Y,Z)
+% re-generate X from Z and Y
+X = cross(Y,Z);     % Y is normalised because of Z and Y
 
+% generate direction cosine matrix.
+% this matrix contains all the rotation angles that have been applied
+% beforehand by the rotate() method
+DCM = [ ...
+    dot(X, x),  dot(Y, x),  dot(Z, x);
+    dot(X, y),  dot(Y, y),  dot(Z, y);
+    dot(X, z),  dot(Y, z),  dot(Z, z);
+    ]
+
+% extract angles
+cosPitchYsinRollX = DCM(3,2);
+cosPitchYcosRollX = DCM(3,3);
+rollX = -atan2(cosPitchYsinRollX, cosPitchYcosRollX) * 180/pi
+
+cosPitchYcosYawZ = DCM(1,1);
+cosPitchYsinYawZ = DCM(2,1);
+yawZ = -atan2(cosPitchYsinYawZ, cosPitchYcosYawZ) * 180/pi
+
+sinYawZ = sind(yawZ);
+cosYawZ = cosd(yawZ);
+sinPitchY = -DCM(3,1);
+%pitchY = -atan2(sinPitchY, cosPitchYsinYawZ/sinYawZ) * 180/pi
+%pitchY = -atan2(sinPitchY*sinYawZ, cosPitchYsinYawZ) * 180/pi
+%pitchY = -atan2(sinPitchY, cosPitchYcosYawZ/cosYawZ) * 180/pi
+pitchY = -atan2(sinPitchY*cosYawZ, cosPitchYcosYawZ) * 180/pi
+
+azimuthd = yawZ;
+elevationd = pitchY;
+rolld = rollX;
+
+%{
 %% Calculate axis cross products
 
 xX = cross(x, X)
@@ -72,14 +111,35 @@ zZ = cross(z, Z)
 
 %% Calculate angles
 
-azimuth = -atan2(xX(3),xY(3));
-azimuthd = azimuth * 180/pi
+control_yaw
+control_pitch
+control_roll
 
-elevation = -atan2(yZ(3), zX(2));
-elevationd = elevation * 180/pi
+Xp = [X(1) X(2) 0]; % project X into X/Y plane
+%cXx = cross(X,x)
+%cYz = cross(Y,z)
+%azimuth = -atan2(Xp(2), Xp(1));
+%azimuth = -atan2(cYz(2), cYz(1));
+azimuth = -atan2(Xp(2), Xp(1));
+azimuthd = round(azimuth * 180/pi * 1000) / 1000
 
-roll = -atan2(xY(2), xY(3));
-rolld = roll * 180/pi
+% unfortunately these coordinates are the rotated ones, so axis swapping
+% occurs
+cZx = cross(Z,x); % project Z into X/Z plane
+elevation = -atan2(cZx(3), cZx(2))
+elevationd = round(elevation * 180/pi * 1000) / 1000
+
+Yp = [0 Y(2) Y(3)]; % project Y into Y/Z plane
+roll = -atan2(Yp(3), Yp(2));
+rolld = round(roll * 180/pi * 1000) / 1000
+
+%}
+
+%% Test calculated vectors
+
+tx = rotateYPRd(xref, rolld, elevationd, azimuthd);
+ty = rotateYPRd(yref, rolld, elevationd, azimuthd);
+tz = rotateYPRd(zref, rolld, elevationd, azimuthd);
 
 %% Plotting of the data
 
@@ -95,13 +155,19 @@ plot3([O(1) x(1)], [O(2) x(2)], [O(3) x(3)], '-r', 'LineWidth', 1); hold on;
 plot3([O(1) y(1)], [O(2) y(2)], [O(3) y(3)], '-g', 'LineWidth', 1);
 plot3([O(1) z(1)], [O(2) z(2)], [O(3) z(3)], '-b', 'LineWidth', 1);
 
+% Plot test coordinate system
+plot3([O(1) tx(1)], [O(2) tx(2)], [O(3) tx(3)], '--r', 'LineWidth', 2); hold on;
+plot3([O(1) ty(1)], [O(2) ty(2)], [O(3) ty(3)], '--g', 'LineWidth', 2);
+plot3([O(1) tz(1)], [O(2) tz(2)], [O(3) tz(3)], '--b', 'LineWidth', 2);
+
 axis equal;
 xlim([-1 1]);
 ylim([-1 1]);
 zlim([-1 1]);
-grid on;
+%grid on;
 
 %set(ax, 'CameraUpVector', Z);
 xlabel('forward');
 ylabel('left');
 zlabel('up');
+rotate3d
