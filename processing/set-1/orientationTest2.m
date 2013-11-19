@@ -8,29 +8,12 @@ close all; clear all; clc; home;
 
 %% Define test vectors
 
-% Generic test
-%{
-a = [0; 1; 1];              % Accelerometer reading
-m = [1; -0.25; 0.25];        % Magnetometer reading
-%}
-
-% Horizontal (azimuth) test
-%{
-a = [0; 0; 1];
-m = [1; 0.5774; 0];
-%}
-
-% Vertical (heading) test
-%{
-a = [-0.5; 0; 1];
-m = [1; 0; 0.5];
-%}
-
 % Roll test
-control_roll = 45;
-control_yaw = 90;
-control_pitch = 45;
+control_roll = 20;
+control_yaw = 10;
+control_pitch = 90;
 
+% vectors are rotated in yaw-pitch-roll order
 xref = rotateYPRd([1; 0; 0], control_roll, control_pitch, control_yaw);
 yref = rotateYPRd([0; 1; 0], control_roll, control_pitch, control_yaw);
 zref = rotateYPRd([0; 0; 1], control_roll, control_pitch, control_yaw);
@@ -74,72 +57,43 @@ DCM = [ ...
     ]
 
 % extract angles
-cosPitchYsinRollX = DCM(3,2);
-cosPitchYcosRollX = DCM(3,3);
+cosPitchYsinRollX = -DCM(2,3);
+cosPitchYcosRollX =  DCM(3,3);
 rollX = -atan2(cosPitchYsinRollX, cosPitchYcosRollX) * 180/pi
 
-cosPitchYcosYawZ = DCM(1,1);
-cosPitchYsinYawZ = DCM(2,1);
+cosPitchYcosYawZ =  DCM(1,1);
+cosPitchYsinYawZ = -DCM(1,2);
 yawZ = -atan2(cosPitchYsinYawZ, cosPitchYcosYawZ) * 180/pi
 
 sinYawZ = sind(yawZ);
 cosYawZ = cosd(yawZ);
-sinPitchY = -DCM(3,1);
-%pitchY = -atan2(sinPitchY, cosPitchYsinYawZ/sinYawZ) * 180/pi
-%pitchY = -atan2(sinPitchY*sinYawZ, cosPitchYsinYawZ) * 180/pi
-%pitchY = -atan2(sinPitchY, cosPitchYcosYawZ/cosYawZ) * 180/pi
-pitchY = -atan2(sinPitchY*cosYawZ, cosPitchYcosYawZ) * 180/pi
+sinPitchY = DCM(1,3);
+
+%pitchY1 = -atan2(sinPitchY, cosPitchYsinYawZ/sinYawZ) * 180/pi
+%pitchY2 = -atan2(sinPitchY*sinYawZ, cosPitchYsinYawZ) * 180/pi
+pitchY3 = -atan2(sinPitchY, cosPitchYcosYawZ/cosYawZ) * 180/pi;
+%pitchY4 = -atan2(sinPitchY*cosYawZ, cosPitchYcosYawZ) * 180/pi
+%pitchY4 = -atan2(sinPitchY, cosPitchYsinRollX/sind(rollX)) * 180/pi
+%pitchY5 = -atan2(sinPitchY*sind(rollX), cosPitchYsinRollX) * 180/pi
+%pitchY6 = -atan2(sinPitchY, cosPitchYcosRollX/cosd(rollX)) * 180/pi
+pitchY7 = -atan2(sinPitchY*cosd(rollX), cosPitchYcosRollX) * 180/pi;
+if rollX >= 90 || rollX <= -90
+    pitchY = pitchY3
+else
+    pitchY = pitchY7
+end
 
 azimuthd = yawZ;
 elevationd = pitchY;
 rolld = rollX;
 
-%{
-%% Calculate axis cross products
-
-xX = cross(x, X)
-xY = cross(x, Y)
-xZ = cross(x, Z)
-
-yX = cross(y, X)
-yY = cross(y, Y)
-yZ = cross(y, Z)
-
-zX = cross(z, X)
-zY = cross(z, Y)
-zZ = cross(z, Z)
-
-%% Calculate angles
-
-control_yaw
-control_pitch
-control_roll
-
-Xp = [X(1) X(2) 0]; % project X into X/Y plane
-%cXx = cross(X,x)
-%cYz = cross(Y,z)
-%azimuth = -atan2(Xp(2), Xp(1));
-%azimuth = -atan2(cYz(2), cYz(1));
-azimuth = -atan2(Xp(2), Xp(1));
-azimuthd = round(azimuth * 180/pi * 1000) / 1000
-
-% unfortunately these coordinates are the rotated ones, so axis swapping
-% occurs
-cZx = cross(Z,x); % project Z into X/Z plane
-elevation = -atan2(cZx(3), cZx(2))
-elevationd = round(elevation * 180/pi * 1000) / 1000
-
-Yp = [0 Y(2) Y(3)]; % project Y into Y/Z plane
-roll = -atan2(Yp(3), Yp(2));
-rolld = round(roll * 180/pi * 1000) / 1000
-
-%}
 
 %% Test calculated vectors
 
-tx = rotateYPRd(xref, rolld, elevationd, azimuthd);
-ty = rotateYPRd(yref, rolld, elevationd, azimuthd);
-tz = rotateYPRd(zref, rolld, elevationd, azimuthd);
+% Vectors need to be rotated in reverse order, that is roll-pitch-yaw
+tx = rotateRPYd(xref, rolld, elevationd, azimuthd);
+ty = rotateRPYd(yref, rolld, elevationd, azimuthd);
+tz = rotateRPYd(zref, rolld, elevationd, azimuthd);
 
 %% Plotting of the data
 
