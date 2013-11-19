@@ -45,7 +45,7 @@ X = mn;             % X is already normalised
 Y = cross(Z, X);    % Y is already normalised
 
 % re-generate X from Z and Y
-X = cross(Y,Z);     % Y is normalised because of Z and Y
+X = cross(Y, Z);    % Y is normalised because of Z and Y
 
 % generate direction cosine matrix.
 % this matrix contains all the rotation angles that have been applied

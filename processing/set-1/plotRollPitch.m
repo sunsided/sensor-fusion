@@ -1,9 +1,9 @@
 clear all; home;
 
 % define the data set folder
-dataSetFolder = '../../data/set-1/tilt-around-x-pointing-forward';
+%dataSetFolder = '../../data/set-1/tilt-around-x-pointing-forward';
 %dataSetFolder = '../../data/set-1/tilt-around-y-pointing-left';
-%dataSetFolder = '../../data/set-1/tilt-around-z-pointing-up';
+dataSetFolder = '../../data/set-1/tilt-around-z-pointing-up';
 
 %% Load the data
 [accelerometer, ~, compass, ~] = loadData(dataSetFolder);
@@ -27,7 +27,8 @@ ypr = zeros(N, 3);
 for i=1:N
     a = acceleration(i, :);
     m = compass(i, :);
-    ypr(i, :) = yawPitchRoll(a, m);
+    [yaw pitch roll] = yawPitchRoll(a, m);
+    ypr(i, :) = [yaw pitch roll];
 end
 
 %% Plot data
