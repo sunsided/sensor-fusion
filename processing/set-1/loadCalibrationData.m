@@ -47,6 +47,13 @@ function data = loadCompassCalibationData
     hardIronOffset(2) = (max(y)+min(y))/2;
     hardIronOffset(3) = (max(z)+min(z))/2;
     
+    % TODO: Calculate soft-iron factors
+    % A naive approach: measure all distances from the center point
+    % to each point in the point cloud. The largest and smallest distances
+    % are equal to the major and minor axis of the ellipse, respectively.
+    % Take the angles to these vectors and rotate to X/Y, then scale to
+    % unity. Repeat to find the third axis.
+    
     disp('Calculated hard iron offset: ');
     disp(num2str(hardIronOffset));
     
