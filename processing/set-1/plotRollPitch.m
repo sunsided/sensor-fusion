@@ -27,17 +27,18 @@ ypr = zeros(N, 3);
 for i=1:N
     a = acceleration(i, :);
     m = compass(i, :);
-    [yaw pitch roll] = yawPitchRoll(a, m);
+    [yaw, pitch, roll] = yawPitchRoll(a, m);
     ypr(i, :) = [yaw pitch roll];
 end
 
+%{
 % correct yaw for modulo breaks
 yawDiff = diff(ypr(:,1));
 indices = find(yawDiff < -90);
 yawDiff(indices) = yawDiff(indices) + 360;
 indices = find(yawDiff > 90);
 yawDiff(indices) = yawDiff(indices) - 360;
-ypr(:,1) = [0; cumsum(yawDiff(:))];
+ypr(:,1) = [0; cumsum(yawDiff(:))] + ypr(1,1);
 
 % correct pitch for modulo breaks
 pitchDiff = diff(ypr(:,2));
@@ -45,7 +46,7 @@ indices = find(pitchDiff < -90);
 pitchDiff(indices) = pitchDiff(indices) + 360;
 indices = find(pitchDiff > 90);
 pitchDiff(indices) = pitchDiff(indices) - 360;
-ypr(:,2) = [0; cumsum(pitchDiff(:))];
+ypr(:,2) = [0; cumsum(pitchDiff(:))] + ypr(1,2);
 
 % correct rool for modulo breaks
 rollDiff = diff(ypr(:,3));
@@ -53,7 +54,8 @@ indices = find(rollDiff < -90);
 rollDiff(indices) = rollDiff(indices) + 360;
 indices = find(rollDiff > 90);
 rollDiff(indices) = rollDiff(indices) - 360;
-ypr(:,3) = [0; cumsum(rollDiff(:))];
+ypr(:,3) = [0; cumsum(rollDiff(:))] + ypr(1,3);
+%}
 
 %% Plot data
 figureHandle = figure('Name', 'Raw and derived inertial sensor data', ...
@@ -236,6 +238,7 @@ t = time;
 roll = ypr(:, 3);
 line(t, roll, ...
     'Parent', axisRpy(1), ...
+    'LineStyle', '.', ...
     'Color', lineColor(4, :) ...
     ); 
 
@@ -264,6 +267,7 @@ t = time;
 pitch = ypr(:, 2);
 line(t, pitch, ...
     'Parent', axisRpy(2), ...
+    'LineStyle', '.', ...
     'Color', lineColor(5, :) ...
     ); 
 
@@ -292,6 +296,7 @@ t = time;
 yaw = ypr(:, 1);
 line(t, yaw, ...
     'Parent', axisRpy(3), ...
+    'LineStyle', '.', ...
     'Color', lineColor(6, :) ...
     ); 
 

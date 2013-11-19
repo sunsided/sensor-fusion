@@ -1,12 +1,13 @@
 function txyzCalibrated = calibrateCompass(txyz)
 
     [~, compassCalibrationData] = loadCalibrationData();
-    hardIronOffset = compassCalibrationData.hardIronOffset;
+    correctionMatrix = compassCalibrationData.correctionMatrix;
 
-    txyzCalibrated = [ ...
-        txyz(:,2) - hardIronOffset(1), ...
-        txyz(:,3) - hardIronOffset(2), ...
-        txyz(:,4) - hardIronOffset(3)];
-    txyzCalibrated = [txyz(:,1) txyzCalibrated(:, 1:3)];
+    N = size(txyz(:,1));
+    txyzCalibrated = zeros(size(txyz));
+    for i=1:N
+        calibrated = correctionMatrix * [txyz(i,2:4) 1]';
+        txyzCalibrated(i, 1:4) = [txyz(i,1) calibrated(1:3)'];
+    end
 
 end
