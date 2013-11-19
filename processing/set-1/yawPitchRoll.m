@@ -15,17 +15,22 @@ function [azimuthYaw, elevationPitch, roll] = yawPitchRoll(accelerometer, magnet
     Z = an;             % Z is already normalised
 
     % after normalisation, mn is identical to the X axis
+    % Note that Z and X are not necessarily orthogonal due to the fact
+    % that X points straight towards magnetic north.
     X = mn;             % X is already normalised
 
     % calculate global Y by crossing X and Z
     Y = cross(Z, X);    % Y is already normalised
     
     % re-generate X from Z and Y
+    % Z and X are orthogonal afterwards.
     X = cross(Y, Z);    % Y is normalised because of Z and Y
 
     % generate direction cosine matrix.
     % this matrix contains all the rotation angles that have been applied
-    % beforehand by the rotate() method
+    % beforehand by the rotate() method. (This essentially IS the rotation
+    % matrix.)
+    % Not all fields are required and should be omitted for performance.
     DCM = [ ...
         dot(X, x),  dot(Y, x),  dot(Z, x);
         dot(X, y),  dot(Y, y),  dot(Z, y);
