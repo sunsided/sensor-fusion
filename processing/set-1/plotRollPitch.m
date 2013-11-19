@@ -2,8 +2,8 @@ clear all; home;
 
 % define the data set folder
 %dataSetFolder = '../../data/set-1/tilt-around-x-pointing-forward';
-%dataSetFolder = '../../data/set-1/tilt-around-y-pointing-left';
-dataSetFolder = '../../data/set-1/tilt-around-z-pointing-up';
+dataSetFolder = '../../data/set-1/tilt-around-y-pointing-left';
+%dataSetFolder = '../../data/set-1/tilt-around-z-pointing-up';
 
 %% Load the data
 [accelerometer, ~, compass, ~] = loadData(dataSetFolder);
@@ -30,6 +30,30 @@ for i=1:N
     [yaw pitch roll] = yawPitchRoll(a, m);
     ypr(i, :) = [yaw pitch roll];
 end
+
+% correct yaw for modulo breaks
+yawDiff = diff(ypr(:,1));
+indices = find(yawDiff < -90);
+yawDiff(indices) = yawDiff(indices) + 360;
+indices = find(yawDiff > 90);
+yawDiff(indices) = yawDiff(indices) - 360;
+ypr(:,1) = [0; cumsum(yawDiff(:))];
+
+% correct pitch for modulo breaks
+pitchDiff = diff(ypr(:,2));
+indices = find(pitchDiff < -90);
+pitchDiff(indices) = pitchDiff(indices) + 360;
+indices = find(pitchDiff > 90);
+pitchDiff(indices) = pitchDiff(indices) - 360;
+ypr(:,2) = [0; cumsum(pitchDiff(:))];
+
+% correct rool for modulo breaks
+rollDiff = diff(ypr(:,3));
+indices = find(rollDiff < -90);
+rollDiff(indices) = rollDiff(indices) + 360;
+indices = find(rollDiff > 90);
+rollDiff(indices) = rollDiff(indices) - 360;
+ypr(:,3) = [0; cumsum(rollDiff(:))];
 
 %% Plot data
 figureHandle = figure('Name', 'Raw and derived inertial sensor data', ...
@@ -284,4 +308,5 @@ set(legendHandle, 'TextColor', [1 1 1]);
 
 %% Plot refining
 % link the axes
-linkaxes([axisAccel axisCompass], 'x');
+linkaxes([axisAccel axisCompass axisRpy], 'x');
+%linkaxes(axisRpy, 'x');
