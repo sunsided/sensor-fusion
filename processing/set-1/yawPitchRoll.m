@@ -1,4 +1,4 @@
-function [azimuthYaw, elevationPitch, roll] = yawPitchRoll(accelerometer, magnetometer)
+function [azimuthYaw, elevationPitch, roll, DCM, coordinateSystem] = yawPitchRoll(accelerometer, magnetometer)
 
     %% Define local coordinate system
 
@@ -20,12 +20,17 @@ function [azimuthYaw, elevationPitch, roll] = yawPitchRoll(accelerometer, magnet
     X = mn;             % X is already normalised
 
     % calculate global Y by crossing X and Z
-    Y = cross(Z, X);    % Y is already normalised
+    Y = cross(Z, X);
+    Y = Y/norm(Y);
     
     % re-generate X from Z and Y
     % Z and X are orthogonal afterwards.
     X = cross(Y, Z);    % Y is normalised because of Z and Y
-
+    X = X/norm(X);
+    
+    % save coordinate system
+    coordinateSystem = [X; Y; Z];
+    
     % generate direction cosine matrix.
     % this matrix contains all the rotation angles that have been applied
     % beforehand by the rotate() method. (This essentially IS the rotation
