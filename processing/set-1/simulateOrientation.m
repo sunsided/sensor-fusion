@@ -1,7 +1,9 @@
-clear all; clc; home;
+close all; clear all; clc; home;
 
 % define the data set folder
-dataSetFolder = '../../data/set-1/unmoved-x-pointing-forward';
+%dataSetFolder = '../../data/set-1/unmoved-x-pointing-forward';
+dataSetFolder = '../../data/set-1/unmoved-x-pointing-up';
+%dataSetFolder = '../../data/set-1/tilt-around-x-pointing-forward';
 
 %% Load the data
 [accelerometer, gyroscope, magnetometer, temperature] = loadData(dataSetFolder);
@@ -20,7 +22,69 @@ axesColor = [0.473 0.473 0.473];
 plotBackground = [0.15 0.15 0.15];
 titleColor = [1 1 1];
 
-orientation(1) = subplot(1, 1, 1, ...
+% 3D
+orientation(1) = subplot(3, 3, [2 3 5 6 8 9], ...
+    'Parent', figureHandle, ...
+    'XGrid', 'on', ...
+    'XColor', axesColor, ...
+    'YGrid', 'on', ...
+    'YColor', axesColor, ...
+    'Color', plotBackground ...
+    );
+
+plotHandle(1) = fill3(NaN, NaN, NaN, [1 0 0]); hold on;
+plotHandle(2) = fill3(NaN, NaN, NaN, [0.5 0 0]); hold on;
+
+xlim([-1 1]); ylim([-1 1]); zlim([-1 1]);
+xlabel('x', 'Color', axesColor); ylabel('y', 'Color', axesColor); zlabel('z', 'Color', axesColor);
+axis square; grid on;
+
+camproj('perspective');
+view(-90, 15);
+rotate3d;
+
+% front
+orientation(2) = subplot(3, 3, 1, ...
+    'Parent', figureHandle, ...
+    'XGrid', 'on', ...
+    'XColor', axesColor, ...
+    'YGrid', 'on', ...
+    'YColor', axesColor, ...
+    'Color', plotBackground ...
+    );
+
+plotHandle(3) = fill3(NaN, NaN, NaN, [1 0 0]); hold on;
+plotHandle(4) = fill3(NaN, NaN, NaN, [0.5 0 0]); hold on;
+
+title('front view (X/Z)', 'Color', titleColor);
+xlim([-1 1]); ylim([-1 1]); zlim([-1 1]);
+xlabel('x', 'Color', axesColor); ylabel('y', 'Color', axesColor); zlabel('z', 'Color', axesColor);
+axis square; grid on;
+
+view(0, 0);
+
+% top
+orientation(3) = subplot(3, 3, 4, ...
+    'Parent', figureHandle, ...
+    'XGrid', 'on', ...
+    'XColor', axesColor, ...
+    'YGrid', 'on', ...
+    'YColor', axesColor, ...
+    'Color', plotBackground ...
+    );
+
+plotHandle(5) = fill3(NaN, NaN, NaN, [1 0 0]); hold on;
+plotHandle(6) = fill3(NaN, NaN, NaN, [0.5 0 0]); hold on;
+
+title('top view (X/Y)', 'Color', titleColor);
+xlim([-1 1]); ylim([-1 1]); zlim([-1 1]);
+xlabel('x', 'Color', axesColor); ylabel('y', 'Color', axesColor); zlabel('z', 'Color', axesColor);
+axis square; grid on;
+
+view(-90, 90);
+
+% left
+orientation(4) = subplot(3, 3, 7, ...
     'Parent', figureHandle, ...
     'XGrid', 'on', ...
     'XColor', axesColor, ...
@@ -31,16 +95,15 @@ orientation(1) = subplot(1, 1, 1, ...
 axis square;
 
 % Prepare plot
-plotHandle(1) = fill3(NaN, NaN, NaN, [1 0 0]); hold on;
-plotHandle(2) = fill3(NaN, NaN, NaN, [0.5 0 0]); hold on;
+plotHandle(7) = fill3(NaN, NaN, NaN, [1 0 0]); hold on;
+plotHandle(8) = fill3(NaN, NaN, NaN, [0.5 0 0]); hold on;
 
+title('side view (Y/Z)', 'Color', titleColor);
 xlim([-1 1]); ylim([-1 1]); zlim([-1 1]);
-xlabel('x'); ylabel('y'); zlabel('z');
-grid on;
+xlabel('x', 'Color', axesColor); ylabel('y', 'Color', axesColor); zlabel('z', 'Color', axesColor);
+axis square; grid on;
 
-camproj('perspective');
-view(-90, 40);
-rotate3d;
+view(-90, 0);
 
 %% Animation
 N = min(size(accelerometer,1), size(magnetometer,1));
@@ -84,7 +147,9 @@ for n=1:N
     end    
     
     % Set data and draw
-    set(plotHandle(1), 'XData', vertices(1:8,1), 'YData', vertices(1:8,2), 'ZData', vertices(1:8,3));
-    set(plotHandle(2), 'XData', vertices((N+1):2*N,1), 'YData', vertices((N+1):2*N,2), 'ZData', vertices((N+1):2*N,3));
+    for p=0:3
+        set(plotHandle(p*2+1),   'XData', vertices(1:8,1), 'YData', vertices(1:8,2), 'ZData', vertices(1:8,3));
+        set(plotHandle(p*2+2), 'XData', vertices((N+1):2*N,1), 'YData', vertices((N+1):2*N,2), 'ZData', vertices((N+1):2*N,3));
+    end
     drawnow;
 end
