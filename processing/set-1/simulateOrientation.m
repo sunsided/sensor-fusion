@@ -1,7 +1,7 @@
 clear all; clc; home;
 
 % define the data set folder
-dataSetFolder = '../../data/set-1/tilt-around-x-pointing-forward';
+dataSetFolder = '../../data/set-1/unmoved-x-pointing-forward';
 
 %% Load the data
 [accelerometer, gyroscope, magnetometer, temperature] = loadData(dataSetFolder);
@@ -39,7 +39,7 @@ xlabel('x'); ylabel('y'); zlabel('z');
 grid on;
 
 camproj('perspective');
-view(-90, 15);
+view(-90, 40);
 rotate3d;
 
 %% Animation
@@ -50,9 +50,9 @@ for n=1:N
     a = accelerometer(n, 2:4);
     
     % Fetch magnetometer axes
-    m = [magnetometer(n, 3);
-         magnetometer(n, 2);
-         magnetometer(n, 4)];
+    m = [-magnetometer(n, 3);
+         -magnetometer(n, 2);
+          magnetometer(n, 4)];
     
     % Fetch rotation
     [~, ~, ~, DCM, coordinateSystem] = yawPitchRoll(a, m);
@@ -61,14 +61,20 @@ for n=1:N
     R = DCM;
 
     % prepare vertices
-    vertices = [-0.75 -0.25 0.02;
-                 0.75 -0.25 0.02;
-                 0.75 0.25 0.02;
-                -0.75 0.25 0.02;
-                -0.75 -0.25 -0.02;
-                 0.75 -0.25 -0.02;
-                 0.75 0.25 -0.02;
-                -0.75 0.25 -0.02];
+    vertices = [ 0.75  0     0.02;
+                 0.25  0.5   0.02;
+                 0.25  0.25  0.02;
+                -0.75  0.25  0.02;
+                -0.75 -0.25  0.02;
+                 0.25 -0.25  0.02;
+                 0.25 -0.5   0.02;
+                 0.75  0     0.02
+                ];
+    N = size(vertices,1);
+    vertices = [vertices; vertices];
+    for vi=N+1:2*N
+        vertices(vi,:) = vertices(vi,:) + [0 0 -0.04];
+    end
 
     % transform vertices
     for vi=1:size(vertices,1)
@@ -78,7 +84,7 @@ for n=1:N
     end    
     
     % Set data and draw
-    set(plotHandle(1), 'XData', vertices(1:4,1), 'YData', vertices(1:4,2), 'ZData', vertices(1:4,3));
-    set(plotHandle(2), 'XData', vertices(5:8,1), 'YData', vertices(5:8,2), 'ZData', vertices(5:8,3));
+    set(plotHandle(1), 'XData', vertices(1:8,1), 'YData', vertices(1:8,2), 'ZData', vertices(1:8,3));
+    set(plotHandle(2), 'XData', vertices((N+1):2*N,1), 'YData', vertices((N+1):2*N,2), 'ZData', vertices((N+1):2*N,3));
     drawnow;
 end
