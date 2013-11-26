@@ -7,7 +7,7 @@ function [accelerometer, magnetometer] =  loadCalibrationData
         disp('Loading magnetometer calibration data.');
         compassCalibrationData = loadCompassCalibationData();
     else
-        disp('Using existing compass calibration data.');
+        %disp('Using existing compass calibration data.');
     end
     magnetometer = compassCalibrationData;
 
@@ -17,7 +17,7 @@ function [accelerometer, magnetometer] =  loadCalibrationData
         disp('Loading accelerometer calibration data.');
         accelerometerCalibrationData = loadAccelerometerCalibrationData();
     else
-        disp('Using existing accelerometer calibration data.');
+        %disp('Using existing accelerometer calibration data.');
     end
     accelerometer = accelerometerCalibrationData;
     
