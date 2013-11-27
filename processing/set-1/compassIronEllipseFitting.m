@@ -64,6 +64,9 @@ line(x, y, z, ...
 hold on;
 
 axis square
+xlabel('x');
+ylabel('y');
+zlabel('z');
 xlim([-1 1]); 
 ylim([-1 1]); 
 zlim([-1 1]);
