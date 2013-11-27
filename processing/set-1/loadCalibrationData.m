@@ -27,7 +27,8 @@ end
 function data = loadCompassCalibationData
     
     % define the data set folder
-    dataSetFolder = '../../data/set-1/tilt-sphere';
+    dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-1', 'tilt-sphere');
+    path(dataSetFolder, path);
 
     % Load the data
     [~, ~, magnetometer, ~] = loadData(dataSetFolder);
@@ -176,15 +177,18 @@ end
 function data = loadAccelerometerCalibrationData
 
     % Load the data: x pointing forward
-    dataSetFolder = '../../data/set-1/unmoved-x-pointing-forward';
+    dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-1', 'unmoved-x-pointing-forward');
+    path(dataSetFolder, path);
     [accelerometerZup, ~, ~, ~] = loadData(dataSetFolder);
     
     % Load the data: x pointing up
-    dataSetFolder = '../../data/set-1/unmoved-x-pointing-up';
+    dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-1', 'unmoved-x-pointing-up');
+    path(dataSetFolder, path);
     [accelerometerXup, ~, ~, ~] = loadData(dataSetFolder);
     
     % Load the data: z pointing left
-    dataSetFolder = '../../data/set-1/unmoved-z-pointing-left';
+    dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-1', 'unmoved-z-pointing-left');
+    path(dataSetFolder, path);
     [accelerometerZleft, ~, ~, ~] = loadData(dataSetFolder);
 
     % Determine x-axis offset and variance
