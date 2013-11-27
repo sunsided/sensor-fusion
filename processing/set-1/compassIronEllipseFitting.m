@@ -38,23 +38,31 @@ S = [radius/radii(1) 0 0;
      0 radius/radii(2) 0;
      0 0 radius/radii(3)];
  
-% Affine transformation
+% transformation
 % note that we multiply from right, i.e. 
 %   step 1) un-rotate (R')
 %   step 2) scale (S)
 %   step 3) rotate back to original orientation (R)
 A = R * S * R';
 
+% build affine transformation matrix
+correction = eye(4);
+correction(1:3, 1:3) = A;
+correction(1:3, 4) = -center;
+
+disp('Affine magnetometer correction matrix:');
+disp(num2str(correction));
+
 % transform all data points
 xc = x;
 yc = y;
 zc = z;
 for n=1:size(x,1)
-    % hard iron correction
-    v = [x(n); y(n); z(n)] - center;
+    % build affine vector
+    v = [x(n); y(n); z(n); 1];
     
-    % correct for skew
-    v = A * v;
+    % apply affine correction matrix
+    v = correction * v;
     
     xc(n) = v(1);
     yc(n) = v(2);
