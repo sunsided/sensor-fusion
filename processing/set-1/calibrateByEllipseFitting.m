@@ -1,4 +1,21 @@
 function [correction, xc, yc, zc] = calibrateByEllipseFitting(x, y, z)
+% Derive sensor calibration data from ellipsoidal raw sensor data points.
+%
+%   calibrateByEllipseFitting( x, y, z )
+%   [correction] = calibrateByEllipseFitting( x, y, z )
+%   [correction, xc, yc, zc] = calibrateByEllipseFitting( x, y, z )
+%
+% Parameters:
+% * x y z        - Cartesian data, three n x 1 vectors
+%
+% Output:
+% * correction   - (optional) 4x4 affine transformation matrix with 
+%                  skew and offset correction
+% * xc yc zc     - (optional) corrected input values
+%
+% If no output argument is given, the raw and corrected sensor data will
+% be displayed in a plot.
+%
 
     % include Yury Petrov's ellipsoid fit
     dataSetFolder = fullfile(fileparts(which(mfilename)), 'ellipsoid_fit');
