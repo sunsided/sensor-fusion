@@ -1,10 +1,10 @@
 clear all; close all; clc; home;
 
 % define the data set folder
-%dataSetFolder = '../../data/set-1/unmoved-x-pointing-forward';
-%dataSetFolder = '../../data/set-1/unmoved-x-pointing-up';
-%dataSetFolder = '../../data/set-1/tilt-around-x-pointing-forward';
-dataSetFolder = '../../data/set-1/rotate-360ccw-around-x-pointing-forward';
+dataSetFolder = fullfile(fileparts(which(mfilename)), '..', '..' , '..', 'data', 'set-1', 'rotate-360ccw-around-x-pointing-forward');
+
+% add parent folder to path
+path(fullfile(fileparts(which(mfilename)), '..'), path);
 
 %% Load the data
 [accelerometer, gyroscope, magnetometer, temperature] = loadData(dataSetFolder);
