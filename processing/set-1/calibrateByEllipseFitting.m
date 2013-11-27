@@ -16,6 +16,8 @@ function [correction, xc, yc, zc] = calibrateByEllipseFitting(x, y, z)
 % If no output argument is given, the raw and corrected sensor data will
 % be displayed in a plot.
 %
+    % in case of plotting
+    global ellipseFittingLink
 
     % include Yury Petrov's ellipsoid fit
     dataSetFolder = fullfile(fileparts(which(mfilename)), 'ellipsoid_fit');
@@ -118,8 +120,6 @@ function [correction, xc, yc, zc] = calibrateByEllipseFitting(x, y, z)
             'Color', plotBackground ...
             );
 
-        linkprop(axisCompass, 'CameraPosition');
-
         title('Raw Sensor Data', ...
             'Parent', axisCompass(1), ...
             'Color', titleColor ...
@@ -147,6 +147,7 @@ function [correction, xc, yc, zc] = calibrateByEllipseFitting(x, y, z)
         ylabel(axisCompass(1), 'y'); ylim(axisCompass(1), [-1 1]); 
         zlabel(axisCompass(1), 'z'); zlim(axisCompass(1), [-1 1]);
         view(axisCompass(1), 3);
+        ellipseFittingLink = linkprop(axisCompass, 'CameraPosition');
 
         % plot compensated
         line(xc, ...
