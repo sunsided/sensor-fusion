@@ -40,7 +40,7 @@ function preparePlotTrajectory()
     axis equal;
 
     camproj('perspective');
-    view(-90, 15);
+    view(3);
     rotate3d;
 
 end
