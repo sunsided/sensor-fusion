@@ -4,6 +4,7 @@ clc; clear all; home;
 dataSetFolder = '../../data/set-1/tilt-sphere';
 
 %% Load the data
+% note that this also works for accelerometer calibration
 [~, ~, magnetometer, temperature] = loadData(dataSetFolder);
 
 % Fetch axes
@@ -50,7 +51,7 @@ correction = eye(4);
 correction(1:3, 1:3) = A;
 correction(1:3, 4) = -center;
 
-disp('Affine magnetometer correction matrix:');
+disp('Affine sensor correction matrix:');
 disp(num2str(correction));
 
 % transform all data points
@@ -70,7 +71,7 @@ for n=1:size(x,1)
 end
 
 %% Plot data
-figureHandle = figure('Name', 'Magnetometer Calibration / Ellipse Fitting', ...
+figureHandle = figure('Name', 'Sensor Calibration / Ellipse Fitting', ...
     'NumberTitle', 'off', ...
     'Color', [0.027 0.211 0.259] ...
     );
