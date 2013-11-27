@@ -143,9 +143,9 @@ function [correction, xc, yc, zc] = calibrateByEllipseFitting(x, y, z)
         hold on;
 
         axis(axisCompass, 'square');
-        xlabel(axisCompass(1), 'x'); xlim(axisCompass(1), [-1 1]); 
-        ylabel(axisCompass(1), 'y'); ylim(axisCompass(1), [-1 1]); 
-        zlabel(axisCompass(1), 'z'); zlim(axisCompass(1), [-1 1]);
+        xlabel(axisCompass(1), 'x'); xlim(axisCompass(1), [-2*radius 2*radius]); 
+        ylabel(axisCompass(1), 'y'); ylim(axisCompass(1), [-2*radius 2*radius]); 
+        zlabel(axisCompass(1), 'z'); zlim(axisCompass(1), [-2*radius 2*radius]);
         view(axisCompass(1), 3);
         ellipseFittingLink = linkprop(axisCompass, 'CameraPosition');
 
@@ -161,9 +161,9 @@ function [correction, xc, yc, zc] = calibrateByEllipseFitting(x, y, z)
         hold on;
 
         axis square
-        xlabel(axisCompass(2), 'x'); xlim(axisCompass(2), [-1 1]); 
-        ylabel(axisCompass(2), 'y'); ylim(axisCompass(2), [-1 1]); 
-        zlabel(axisCompass(2), 'z'); zlim(axisCompass(2), [-1 1]);
+        xlabel(axisCompass(2), 'x'); xlim(axisCompass(2), [-2*radius 2*radius]); 
+        ylabel(axisCompass(2), 'y'); ylim(axisCompass(2), [-2*radius 2*radius]); 
+        zlabel(axisCompass(2), 'z'); zlim(axisCompass(2), [-2*radius 2*radius]);
         view(axisCompass(2), 3);
         rotate3d;
 
