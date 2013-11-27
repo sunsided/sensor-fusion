@@ -10,65 +10,10 @@ dataSetFolder = '../../data/set-1/tilt-sphere';
 % Fetch axes
 x = magnetometer(:, 2);
 y = magnetometer(:, 3);
-z = magnetometer(:, 4);    
+z = magnetometer(:, 4);
 
-% include Yury Petrov's ellipsoid fit
-dataSetFolder = fullfile(fileparts(which(mfilename)), 'ellipsoid_fit');
-path(dataSetFolder, path);
-
-% fit ellipse
-[center, radii, evecs, ~] = ellipsoid_fit([x y z]);
-
-% get reference axes
-X = [1 0 0];
-Y = [0 1 0];
-Z = [0 0 1];
-
-% build direction cosine matrix that describes the rotation
-% from the reference axes to the rotated ellipse axes
-DCM = [ dot(X, evecs(:,1)), dot(X, evecs(:,2)), dot(X, evecs(:,3));
-        dot(Y, evecs(:,1)), dot(Y, evecs(:,2)), dot(Y, evecs(:,3));
-        dot(Z, evecs(:,1)), dot(Z, evecs(:,2)), dot(Z, evecs(:,3))];
-
-% get rotation back to unit axes by inverting the DCM
-R = DCM;
-
-% get scaling matrix
-radius = mean(radii);
-S = [radius/radii(1) 0 0;
-     0 radius/radii(2) 0;
-     0 0 radius/radii(3)];
- 
-% transformation
-% note that we multiply from right, i.e. 
-%   step 1) un-rotate (R')
-%   step 2) scale (S)
-%   step 3) rotate back to original orientation (R)
-A = R * S * R';
-
-% build affine transformation matrix
-correction = eye(4);
-correction(1:3, 1:3) = A;
-correction(1:3, 4) = -center;
-
-disp('Affine sensor correction matrix:');
-disp(num2str(correction));
-
-% transform all data points
-xc = x;
-yc = y;
-zc = z;
-for n=1:size(x,1)
-    % build affine vector
-    v = [x(n); y(n); z(n); 1];
-    
-    % apply affine correction matrix
-    v = correction * v;
-    
-    xc(n) = v(1);
-    yc(n) = v(2);
-    zc(n) = v(3);
-end
+% Calibrate sensor
+[correction, xc, yc, zc] = calibrateByEllipseFitting(x, y, z);
 
 %% Plot data
 figureHandle = figure('Name', 'Sensor Calibration / Ellipse Fitting', ...
