@@ -1,4 +1,4 @@
-clear all; close all; clc; home;
+%clear all; close all; clc; home;
 
 % define the data set folder
 dataSetFolder = fullfile(fileparts(which(mfilename)), '..', '..' , '..', 'data', 'set-1', 'rotate-360ccw-around-x-pointing-forward');
@@ -25,7 +25,7 @@ for n=1:N
          magnetometer(n, 4)]';
     
     % Calibrate values
-    %a = calibrateAccelerometer(a);
+    a = calibrateAccelerometer(a);
     m = calibrateCompass(m);
       
     % Normalize for later use
@@ -38,5 +38,5 @@ for n=1:N
     disp(msg);
     
     % plot the orientation
-    plotTrajectory(mn);
+    plotTrajectory(a);
 end
