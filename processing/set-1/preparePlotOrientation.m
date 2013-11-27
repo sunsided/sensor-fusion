@@ -43,6 +43,7 @@ function preparePlotOrientation()
         'LineWidth', 1);
     view(3);
     xlim([-2 2]); ylim([-2 2]); zlim([-2 2]);
+    xlabel('x', 'Color', axesColor); ylabel('y', 'Color', axesColor); zlabel('z', 'Color', axesColor);
     grid on;
     axis equal;
 
