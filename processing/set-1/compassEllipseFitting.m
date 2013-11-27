@@ -1,7 +1,5 @@
-clc; clear all; home;
-
 % define the data set folder
-dataSetFolder = '../../data/set-1/tilt-sphere';
+dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-1', 'tilt-sphere');
 
 %% Load the data
 % note that this also works for accelerometer calibration
