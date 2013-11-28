@@ -1,7 +1,7 @@
 %clear all; close all; clc; home;
 
 % define the data set folder
-dataSet = 'rotate-360ccw-around-z-pointing-up';
+dataSet = 'rotate-360ccw-around-x-pointing-forward';
 dataSetFolder = fullfile(fileparts(which(mfilename)), '..', '..' , '..', 'data', 'set-1', dataSet);
 
 % add parent folder to path
@@ -9,12 +9,15 @@ path(fullfile(fileparts(which(mfilename)), '..'), path);
 
 %% Load the data
 [accelerometer, gyroscope, magnetometer, temperature] = loadData(dataSetFolder);
+N = min(size(accelerometer,1), size(magnetometer,1));
 
 %% Prepare Plots
 preparePlotTrajectory(dataSet);
 
+% Prepare angles
+angles = NaN(N,3);
+
 %% Animation
-N = min(size(accelerometer,1), size(magnetometer,1));
 for n=1:N
 
     % Fetch accelerometer axes
@@ -51,7 +54,21 @@ for n=1:N
     msg = sprintf('theta: %+1.3f %+1.3f %+1.3f', ... 
                     theta_Mx, theta_My, theta_Mz);
     disp(msg);
+    angles(n,:) = [theta_Mx, theta_My, theta_Mz];
         
     % plot the orientation
-    plotTrajectory(m);
+    if mod(n,10) == 0
+        plotTrajectory(m);
+    end
 end
+
+figure('Name', ['Axes: ' dataSet], 'NumberTitle', 'off');
+subplot(3,1,1);
+plot(angles(:,1));
+xlabel('t'); ylabel('heading (tMx)');
+subplot(3,1,2);
+plot(angles(:,2));
+xlabel('t'); ylabel('theta y');
+subplot(3,1,3);
+plot(angles(:,3));
+xlabel('t'); ylabel('theta z');
