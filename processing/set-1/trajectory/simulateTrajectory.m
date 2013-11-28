@@ -15,7 +15,8 @@ N = min(size(accelerometer,1), size(magnetometer,1));
 preparePlotTrajectory(dataSet);
 
 % Prepare angles
-angles = NaN(N,3);
+angles1 = NaN(N,3);
+angles2 = NaN(N,3);
 
 %% Animation
 for n=1:N
@@ -53,27 +54,54 @@ for n=1:N
     %theta_Mz = atan2(m(1), m(3)) * 180/pi;
 
     % following code taken from webbot sources, (c) 2011 Clive Webster
-    
     theta_Mz = atan2(m(1), -m(2)) * 180/pi; % bearing, yaw, heading, gieren
     if theta_Mz < 0
-        theta_Mz = theta_Mz + 360
+        theta_Mz = theta_Mz + 360;
     end
     
     theta_My = atan2(m(1), -m(3)) * 180/pi; % pitch, attitude, elevation, nicken
     if theta_My < 0
-        theta_My = theta_My + 360
+        theta_My = theta_My + 360;
     end
     
     theta_Mx = atan2(m(2), -m(3)) * 180/pi; % roll
     if theta_Mx < 0
-        theta_Mx = theta_Mx + 360
+        theta_Mx = theta_Mx + 360;
     end
     
-    msg = sprintf('theta: %+1.3f %+1.3f %+1.3f', ... 
+    msg = sprintf('theta mag: %+1.3f %+1.3f %+1.3f', ... 
                     theta_Mx, theta_My, theta_Mz);
     disp(msg);
-    angles(n,:) = [theta_Mx, theta_My, theta_Mz];
+    angles1(n,:) = [theta_Mx, theta_My, theta_Mz];
         
+    
+    
+    % following code taken from webbot sources, (c) 2011 Clive Webster
+    theta_Mz = atan2(a(1), -a(2)) * 180/pi; % bearing, yaw, heading, gieren
+    if theta_Mz < -10
+        theta_Mz = theta_Mz + 360;
+    end
+    
+    theta_My = atan2(a(1), -a(3)) * 180/pi; % pitch, attitude, elevation, nicken
+    if theta_My < -10
+        theta_My = theta_My + 360;
+    end
+    
+    theta_Mx = atan2(a(2), -a(3)) * 180/pi; % roll
+    if theta_Mx < -10
+        theta_Mx = theta_Mx + 360;
+    end
+    
+    msg = sprintf('theta acc: %+1.3f %+1.3f %+1.3f', ... 
+                    theta_Mx, theta_My, theta_Mz);
+    disp(msg);
+    angles2(n,:) = [theta_Mx, theta_My, theta_Mz];
+    disp(' ');
+       
+    
+    
+    
+    
     % plot the orientation
     if mod(n,10) == 0
         plotTrajectory(m);
@@ -82,14 +110,17 @@ end
 
 figure('Name', ['Axes: ' dataSet], 'NumberTitle', 'off');
 subplot(3,1,1);
-plot(angles(:,1));
+plot(angles1(:,1)); hold on;
+plot(angles2(:,1), 'k');
 ylim([0 360]);
 xlabel('t'); ylabel('heading (tMx)');
 subplot(3,1,2);
-plot(angles(:,2));
+plot(angles1(:,2)); hold on;
+plot(angles2(:,2), 'k'); hold on;
 ylim([0 360]);
 xlabel('t'); ylabel('theta y');
 subplot(3,1,3);
-plot(angles(:,3));
+plot(angles1(:,3)); hold on;
+plot(angles2(:,3), 'k');
 ylim([0 360]);
 xlabel('t'); ylabel('theta z');
