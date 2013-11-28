@@ -1,7 +1,7 @@
 %clear all; close all; clc; home;
 
 % define the data set folder
-dataSet = 'rotate-360ccw-around-x-pointing-forward';
+dataSet = 'rotate-360ccw-around-y-pointing-left';
 dataSetFolder = fullfile(fileparts(which(mfilename)), '..', '..' , '..', 'data', 'set-1', dataSet);
 
 % add parent folder to path
@@ -48,9 +48,27 @@ for n=1:N
     disp(msg);
     %}
     
-    theta_Mx = atan2(m(2), m(1)) * 180/pi;
-    theta_My = atan2(m(3), m(2)) * 180/pi;
-    theta_Mz = atan2(m(1), m(3)) * 180/pi;
+    %theta_Mx = atan2(m(2), m(1)) * 180/pi;
+    %theta_My = atan2(m(3), m(2)) * 180/pi;
+    %theta_Mz = atan2(m(1), m(3)) * 180/pi;
+
+    % following code taken from webbot sources, (c) 2011 Clive Webster
+    
+    theta_Mz = atan2(m(1), -m(2)) * 180/pi; % bearing, yaw, heading, gieren
+    if theta_Mz < 0
+        theta_Mz = theta_Mz + 360
+    end
+    
+    theta_My = atan2(m(1), -m(3)) * 180/pi; % pitch, attitude, elevation, nicken
+    if theta_My < 0
+        theta_My = theta_My + 360
+    end
+    
+    theta_Mx = atan2(m(2), -m(3)) * 180/pi; % roll
+    if theta_Mx < 0
+        theta_Mx = theta_Mx + 360
+    end
+    
     msg = sprintf('theta: %+1.3f %+1.3f %+1.3f', ... 
                     theta_Mx, theta_My, theta_Mz);
     disp(msg);
@@ -65,10 +83,13 @@ end
 figure('Name', ['Axes: ' dataSet], 'NumberTitle', 'off');
 subplot(3,1,1);
 plot(angles(:,1));
+ylim([0 360]);
 xlabel('t'); ylabel('heading (tMx)');
 subplot(3,1,2);
 plot(angles(:,2));
+ylim([0 360]);
 xlabel('t'); ylabel('theta y');
 subplot(3,1,3);
 plot(angles(:,3));
+ylim([0 360]);
 xlabel('t'); ylabel('theta z');
