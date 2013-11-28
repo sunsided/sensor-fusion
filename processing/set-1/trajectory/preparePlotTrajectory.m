@@ -1,4 +1,8 @@
-function preparePlotTrajectory()
+function preparePlotTrajectory(figureTitle)
+
+    if ~exist('figureTitle', 'var')
+        figureTitle = 'Trajectory';        
+    end
 
     global trajectoryPlotHandle trajectoryAxis
 
@@ -9,8 +13,8 @@ function preparePlotTrajectory()
     axesColor = [0.473 0.473 0.473];
     plotBackground = [0.15 0.15 0.15];
     titleColor = [1 1 1];
-
-    trajectoryFigureHandle(1) = figure('Name', 'Trajectory', ...
+    
+    trajectoryFigureHandle(1) = figure('Name', figureTitle, ...
         'NumberTitle', 'off', ...
         'Color', [0.027 0.211 0.259] ...
         );
