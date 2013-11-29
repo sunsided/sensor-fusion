@@ -1,7 +1,10 @@
 clear all; clc; home;
+% NOTE: In the constellation below, measured Z vector and measured
+%       magnetic field vector are (measured) exactly opposite, i.e. g=-m
+%       due to the sensor flipping the Z axis!
 
 % define affine gravity vector direction
-Gravity = [0; 0; 1; 0];
+Gravity = [0; 0; -1; 0];
 Gravity = Gravity/norm(Gravity);
 
 % define affine direction of strongest magnetic field
@@ -10,7 +13,7 @@ MagneticField = MagneticField/norm(MagneticField);
 
 % define coordinate system rotation
 psi_azimuth     = degtorad(0);
-theta_elevation = degtorad(-45);
+theta_elevation = degtorad(-22.5);
 phi_roll        = degtorad(0);
 
 % define affine base vectors (affine component is zero; direction vectors)
@@ -42,6 +45,7 @@ zgp = R'*Z;
 
 % calculated perceived sensor vectors
 g = R'*Gravity;
+g = g .* [1; 1; -1; 1]; % adjust for sensor
 m = R'*MagneticField;
 
 % derive local frame up vector by mirroring Z axis
