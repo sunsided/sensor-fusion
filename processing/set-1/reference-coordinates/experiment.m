@@ -1,7 +1,4 @@
 clear all; clc; home;
-% NOTE: In the constellation below, measured Z vector and measured
-%       magnetic field vector are (measured) exactly opposite, i.e. g=-m
-%       due to the sensor flipping the Z axis!
 
 % define affine gravity vector direction
 Gravity = [0; 0; -1; 0];
@@ -12,9 +9,9 @@ MagneticField = [1; 0; -1; 0];
 MagneticField = MagneticField/norm(MagneticField);
 
 % define coordinate system rotation
-psi_azimuth     = degtorad(0);
-theta_elevation = degtorad(-22.5);
-phi_roll        = degtorad(0);
+psi_azimuth     = degtorad(90);
+theta_elevation = degtorad(-45);
+phi_roll        = degtorad(45);
 
 % define affine base vectors (affine component is zero; direction vectors)
 X = [1; 0; 0; 0];
@@ -44,15 +41,18 @@ ygp = R'*Y;
 zgp = R'*Z;
 
 % calculated perceived sensor vectors
-g = R'*Gravity;
-g = g .* [1; 1; -1; 1]; % adjust for sensor
+% The two scaling operations seem to be pointless as they cancel out
+% immediatley but are left here for clarity, as the Z-compensation 
+% is exactly what needs to be done for the MPU6050.
+acc = R'*Gravity .* [1; 1; -1; 1]; % the sensor does this internally
+g = acc          .* [1; 1; -1; 1]; % compensate for sensor
 m = R'*MagneticField;
 
 % derive local frame up vector by mirroring Z axis
-up = g(1:3);
+up = -g(1:3);
 up = up/norm(up);
 
-left = cross(g(1:3), m(1:3));
+left = cross(m(1:3), g(1:3));
 left = left/norm(left);
 
 forward = cross(left, up);
@@ -65,9 +65,9 @@ fprintf('mag:  % 1.3f % 1.3f % 1.3f\n', MagneticField(1), MagneticField(2), Magn
 
 % print coordinate frame angles
 fprintf('\nSimulated orientation:\n');
-fprintf('azimuth:   % 4.0f degree\n', radtodeg(psi_azimuth));
-fprintf('elevation: % 4.0f degree\n', radtodeg(theta_elevation));
-fprintf('roll:      % 4.0f degree\n', radtodeg(phi_roll));
+fprintf('azimuth:   % 4.1f degree\n', radtodeg(psi_azimuth));
+fprintf('elevation: % 4.1f degree\n', radtodeg(theta_elevation));
+fprintf('roll:      % 4.1f degree\n', radtodeg(phi_roll));
 
 % print coordinate system
 fprintf('\nSimulated local coordinate frame:\n');
@@ -83,11 +83,11 @@ fprintf('z:    % 1.3f % 1.3f % 1.3f\n', zgp(1), zgp(2), zgp(3));
 
 % print perceived gravity and magnetic field vectors
 fprintf('\nPerceived forces (in local frame):\n');
-fprintf('acc:  % 1.3f % 1.3f % 1.3f\n', g(1), g(2), g(3));
+fprintf('acc:  % 1.3f % 1.3f % 1.3f\n', acc(1), acc(2), acc(3));
 fprintf('mag:  % 1.3f % 1.3f % 1.3f\n', m(1), m(2), m(3));
 
 % print derived global frame
-fprintf('\nDerived global frame:\n');
+fprintf('\nDerived perceived global frame:\n');
 fprintf('forw: % 1.3f % 1.3f % 1.3f\n', forward(1), forward(2), forward(3));
 fprintf('left: % 1.3f % 1.3f % 1.3f\n', left(1), left(2), left(3));
 fprintf('up:   % 1.3f % 1.3f % 1.3f\n', up(1), up(2), up(3));
