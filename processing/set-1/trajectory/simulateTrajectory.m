@@ -35,8 +35,17 @@ for n=1:N
     
     % Unfortunately, when reading the HMC5883L, the Y and Z readings
     % are swapped, so the order is X, Z, Y.
-    % Also, for the Drotek breakout, positive Z is pointing down.
-    m = [m(1); m(3); -m(2)];
+    %
+    % NOTE: From a quick look it seems that the Z axis sign is flipped
+    %       when in reality it is the perception of the magnetic field
+    %       that is wrong. The magnetic field is only perpendicular to
+    %       the earth's surface when at the equator. On the northern
+    %       hemisphere, the magnetic field enters earth at an angle
+    %       (a downward angled vector!) while at the southern hemisphere
+    %       it shoots out of earth at an angle.
+    % see: http://forum.arduino.cc/index.php?topic=152529.msg1147915#msg1147915
+    %      http://forum.arduino.cc/index.php?topic=152529.msg1150084#msg1150084
+    m = [m(1); m(3); m(2)];
     
     % Normalize for later use
     an = a/norm(a);
