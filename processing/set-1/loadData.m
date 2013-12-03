@@ -13,9 +13,9 @@ function [accel, gyro, compass, temp] = loadData(dataSetFolder)
     end
     cd(currentFolder);
 
-    accel = accelBuffer;
-    gyro = gyroBuffer;
-    compass = compassBuffer;
-    temp = temperatureBuffer;
+    accel = timeseries(accelBuffer(:,2:4), accelBuffer(:,1), 'Name', 'Accelerometer');
+    gyro = timeseries(gyroBuffer(:,2:4), gyroBuffer(:,1), 'Name', 'Gyroscope');
+    compass = timeseries(compassBuffer(:,2:4), compassBuffer(:,1), 'Name', 'Magnetometer');
+    temp = timeseries(temperatureBuffer(:,2), temperatureBuffer(:,1), 'Name', 'Temperature');
     
 end

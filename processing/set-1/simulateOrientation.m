@@ -4,30 +4,41 @@ clear all; close all; clc; home;
 %dataSetFolder = '../../data/set-1/unmoved-x-pointing-forward';
 %dataSetFolder = '../../data/set-1/unmoved-x-pointing-up';
 %dataSetFolder = '../../data/set-1/tilt-around-x-pointing-forward';
-dataSetFolder = '../../data/set-1/rotate-360ccw-around-z-pointing-up';
+%dataSetFolder = '../../data/set-1/rotate-360ccw-around-z-pointing-up';
+%dataSetFolder = '../../data/set-1/rotate-360ccw-around-x-pointing-forward';
+dataSetFolder = '../../data/set-1/rotate-360ccw-around-y-pointing-left';
 
 %% Load the data
 [accelerometer, gyroscope, magnetometer, temperature] = loadData(dataSetFolder);
+
+% resample the time series
+[accelerometer, magnetometer] = lerpTimeSeries(accelerometer, magnetometer);
 
 %% Prepare Plots
 preparePlotOrientation();
 
 %% Animation
-N = min(size(accelerometer,1), size(magnetometer,1));
-for n=1:N
+baseDCM = [];
+N = accelerometer.Length;
+for n=1:2:N
 
-    % Fetch accelerometer axes
-    a = accelerometer(n, 2:4);
-    
-    % Fetch magnetometer axes
-    m = [-magnetometer(n, 3);
-         -magnetometer(n, 2);
-          magnetometer(n, 4)]';
-    
+    % Fetch sensor axes
+    a = accelerometer.Data(n, :);
+    m = magnetometer.Data(n, :);
+   
     % Calibrate values
     a = calibrateAccelerometer(a);
     m = calibrateCompass(m);
       
+    % Compensate for MPU6050 z axis sign
+    % (Z axis on the MPU6050 is sign flipped so that it shows the up
+    % vector)
+    a = a .* [1, 1, -1];
+    
+    % Unfortunately, when reading the HMC5883L, the Y and Z readings
+    % are swapped, so the order is X, Z, Y.
+    m = [m(1), m(3), m(2)];
+
     % Normalize for later use
     an = a/norm(a);
     mn = m/norm(m);
@@ -39,6 +50,12 @@ for n=1:N
     
     % Fetch rotation
     [~, ~, ~, DCM, coordinateSystem] = yawPitchRoll(a, m);
+
+    % rotate relative to original rotation.
+    if isempty(baseDCM)
+        baseDCM = DCM';
+    end
+    DCM = DCM*baseDCM;
     
     % plot the orientation
     plotOrientation(DCM, coordinateSystem, an, mn);

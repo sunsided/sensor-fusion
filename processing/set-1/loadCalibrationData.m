@@ -33,9 +33,9 @@ function data = loadCompassCalibationData
     [~, ~, magnetometer, ~] = loadData(dataSetFolder);
 
     % Fetch axes
-    x = magnetometer(:, 2);
-    y = magnetometer(:, 3);
-    z = magnetometer(:, 4);    
+    x = magnetometer.Data(:, 1);
+    y = magnetometer.Data(:, 2);
+    z = magnetometer.Data(:, 3);
     
     % Calibrate sensor
     correction = calibrateByEllipseFitting(x, y, z);
@@ -65,17 +65,17 @@ function data = loadAccelerometerCalibrationData
     [accelerometerZleft, ~, ~, ~] = loadData(dataSetFolder);
 
     % Determine x-axis offset and variance
-    x = [accelerometerZup(:,2); accelerometerZleft(:,2)];
+    x = [accelerometerZup.Data(:,1); accelerometerZleft.Data(:,1)];
     xMean       = mean(x);
     xVariance   = var(x);
     
     % Determine y-axis offset and variance
-    y = [accelerometerZup(:,3); accelerometerXup(:,3)];
+    y = [accelerometerZup.Data(:,2); accelerometerXup.Data(:,2)];
     yMean       = mean(y);
     yVariance   = var(y);
     
     % Determine z-axis offset and variance
-    z = [accelerometerXup(:,4); accelerometerZleft(:,4)];
+    z = [accelerometerXup.Data(:,3); accelerometerZleft.Data(:,3)];
     zMean       = mean(z);
     zVariance   = var(z);
     
@@ -98,9 +98,9 @@ function data = loadAccelerometerCalibrationData
     [accelerometer, ~, ~, ~] = loadData(dataSetFolder);
     
     % Fetch axes
-    x = accelerometer(:, 2);
-    y = accelerometer(:, 3);
-    z = accelerometer(:, 4);   
+    x = accelerometer.Data(:, 1);
+    y = accelerometer.Data(:, 2);
+    z = accelerometer.Data(:, 3);
     
     % Calibrate sensor
     correction = calibrateByEllipseFitting(x, y, z);
