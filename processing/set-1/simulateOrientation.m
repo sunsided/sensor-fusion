@@ -11,23 +11,20 @@ dataSetFolder = '../../data/set-1/tilt-around-x-pointing-forward';
 %% Load the data
 [accelerometer, gyroscope, magnetometer, temperature] = loadData(dataSetFolder);
 
-[accelerometer, magnetometer] = lerpVectors(accelerometer, magnetometer);
+% resample the time series
+[accelerometer, magnetometer] = lerpTimeSeries(accelerometer, magnetometer);
 
 %% Prepare Plots
 preparePlotOrientation();
 
 %% Animation
-N = min(size(accelerometer,1), size(magnetometer,1));
+N = accelerometer.Length;
 for n=1:N
 
-    % Fetch accelerometer axes
-    a = accelerometer(n, 2:4);
-    
-    % Fetch magnetometer axes
-    m = [magnetometer(n, 2);
-         magnetometer(n, 3);
-         magnetometer(n, 4)]';
-    
+    % Fetch sensor axes
+    a = accelerometer.Data(n, :);
+    m = magnetometer.Data(n, :);
+   
     % Calibrate values
     a = calibrateAccelerometer(a);
     m = calibrateCompass(m);
