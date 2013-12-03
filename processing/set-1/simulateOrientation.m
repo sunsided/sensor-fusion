@@ -3,10 +3,10 @@ clear all; close all; clc; home;
 % define the data set folder
 %dataSetFolder = '../../data/set-1/unmoved-x-pointing-forward';
 %dataSetFolder = '../../data/set-1/unmoved-x-pointing-up';
-dataSetFolder = '../../data/set-1/tilt-around-x-pointing-forward';
+%dataSetFolder = '../../data/set-1/tilt-around-x-pointing-forward';
 %dataSetFolder = '../../data/set-1/rotate-360ccw-around-z-pointing-up';
 %dataSetFolder = '../../data/set-1/rotate-360ccw-around-x-pointing-forward';
-%dataSetFolder = '../../data/set-1/rotate-360ccw-around-y-pointing-left';
+dataSetFolder = '../../data/set-1/rotate-360ccw-around-y-pointing-left';
 
 %% Load the data
 [accelerometer, gyroscope, magnetometer, temperature] = loadData(dataSetFolder);
@@ -20,7 +20,7 @@ preparePlotOrientation();
 %% Animation
 baseDCM = [];
 N = accelerometer.Length;
-for n=1:N
+for n=1:2:N
 
     % Fetch sensor axes
     a = accelerometer.Data(n, :);
@@ -37,8 +37,8 @@ for n=1:N
     
     % Unfortunately, when reading the HMC5883L, the Y and Z readings
     % are swapped, so the order is X, Z, Y.
-    m = [m(1); m(3); m(2)];
-    
+    m = [m(1), m(3), m(2)];
+
     % Normalize for later use
     an = a/norm(a);
     mn = m/norm(m);
