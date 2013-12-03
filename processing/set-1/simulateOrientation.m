@@ -46,8 +46,7 @@ for n=1:N
     mn = m/norm(m);
           
     % Debugging
-    msg = sprintf('acc: %f/%f %+1.3f %+1.3f %+1.3f mag: %+1.3f %+1.3f %+1.3f', ... 
-                    accelerometer(n,1), magnetometer(n,1), ...
+    msg = sprintf('acc: %+1.3f %+1.3f %+1.3f mag: %+1.3f %+1.3f %+1.3f', ... 
                     a(1), a(2), a(3), m(1), m(2), m(3));
     disp(msg);
     
