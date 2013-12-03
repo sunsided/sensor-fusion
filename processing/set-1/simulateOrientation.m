@@ -18,6 +18,7 @@ dataSetFolder = '../../data/set-1/tilt-around-x-pointing-forward';
 preparePlotOrientation();
 
 %% Animation
+baseDCM = [];
 N = accelerometer.Length;
 for n=1:N
 
@@ -49,6 +50,12 @@ for n=1:N
     
     % Fetch rotation
     [~, ~, ~, DCM, coordinateSystem] = yawPitchRoll(a, m);
+
+    % rotate relative to original rotation.
+    if isempty(baseDCM)
+        baseDCM = DCM';
+    end
+    DCM = DCM*baseDCM;
     
     % plot the orientation
     plotOrientation(DCM, coordinateSystem, an, mn);
