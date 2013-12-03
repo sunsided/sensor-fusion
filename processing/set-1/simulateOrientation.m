@@ -3,10 +3,10 @@ clear all; close all; clc; home;
 % define the data set folder
 %dataSetFolder = '../../data/set-1/unmoved-x-pointing-forward';
 %dataSetFolder = '../../data/set-1/unmoved-x-pointing-up';
-%dataSetFolder = '../../data/set-1/tilt-around-x-pointing-forward';
+dataSetFolder = '../../data/set-1/tilt-around-x-pointing-forward';
 %dataSetFolder = '../../data/set-1/rotate-360ccw-around-z-pointing-up';
 %dataSetFolder = '../../data/set-1/rotate-360ccw-around-x-pointing-forward';
-dataSetFolder = '../../data/set-1/rotate-360ccw-around-y-pointing-left';
+%dataSetFolder = '../../data/set-1/rotate-360ccw-around-y-pointing-left';
 
 %% Load the data
 [accelerometer, gyroscope, magnetometer, temperature] = loadData(dataSetFolder);
@@ -30,10 +30,14 @@ for n=1:N
     a = calibrateAccelerometer(a);
     m = calibrateCompass(m);
       
+    % Compensate for MPU6050 z axis sign
+    % (Z axis on the MPU6050 is sign flipped so that it shows the up
+    % vector)
+    a = a .* [1, 1, -1];
+    
     % Unfortunately, when reading the HMC5883L, the Y and Z readings
     % are swapped, so the order is X, Z, Y.
-    % Also, for the Drotek breakout, positive Z is pointing down.
-    m = [m(1); m(3); -m(2)];
+    m = [m(1); m(3); m(2)];
     
     % Normalize for later use
     an = a/norm(a);

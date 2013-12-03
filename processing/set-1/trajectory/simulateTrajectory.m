@@ -33,6 +33,14 @@ for n=1:N
     a = calibrateAccelerometer(a);
     m = calibrateCompass(m);
     
+    % A problem with the MPU6050 is that the registers do containt the
+    % strongest acceleration with z sign flipped. This is good as one
+    % is usually interested in the up vector, but it can result in a case
+    % where up and magnetic vector are perpendicular to each other.
+    % Thus for calculation of the coordinate system we will flip the Z
+    % sign.
+    a = [a(1); a(2); -a(3)];
+    
     % Unfortunately, when reading the HMC5883L, the Y and Z readings
     % are swapped, so the order is X, Z, Y.
     %

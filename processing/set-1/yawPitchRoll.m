@@ -10,10 +10,10 @@ function [azimuthYaw, elevationPitch, roll, DCM, coordinateSystem] = yawPitchRol
 
     an = accelerometer / norm(accelerometer);
     mn = magnetometer / norm(magnetometer);
-
+    
     % after normalisation, an (positive up) is the the Z axis
     Z = an;             % Z is already normalised
-
+    
     % after normalisation, mn is identical to the X axis
     % Note that Z and X are not necessarily orthogonal due to the fact
     % that X points straight towards magnetic north.
@@ -27,6 +27,10 @@ function [azimuthYaw, elevationPitch, roll, DCM, coordinateSystem] = yawPitchRol
     % Z and X are orthogonal afterwards.
     X = cross(Y, Z);    % Y is normalised because of Z and Y
     X = X/norm(X);
+    
+    % re-gererate Z from X and Y
+    Z = cross(Y, X);
+    Z = Z/norm(Z);
     
     % save coordinate system
     coordinateSystem = [X; Y; Z];
