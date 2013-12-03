@@ -20,16 +20,16 @@ function [azimuthYaw, elevationPitch, roll, DCM, coordinateSystem] = yawPitchRol
     X = mn;             % X is already normalised
 
     % calculate global Y by crossing X and Z
-    Y = cross(Z, X);
+    Y = cross(X, Z);
     Y = Y/norm(Y);
     
     % re-generate X from Z and Y
     % Z and X are orthogonal afterwards.
-    X = cross(Y, Z);    % Y is normalised because of Z and Y
+    X = cross(Z, Y);    % Y is normalised because of Z and Y
     X = X/norm(X);
     
     % re-gererate Z from X and Y
-    Z = cross(Y, X);
+    Z = cross(X, Y);
     Z = Z/norm(Z);
     
     % save coordinate system
