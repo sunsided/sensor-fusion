@@ -11,6 +11,8 @@ dataSetFolder = '../../data/set-1/tilt-around-x-pointing-forward';
 %% Load the data
 [accelerometer, gyroscope, magnetometer, temperature] = loadData(dataSetFolder);
 
+[accelerometer, magnetometer] = lerpVectors(accelerometer, magnetometer);
+
 %% Prepare Plots
 preparePlotOrientation();
 
