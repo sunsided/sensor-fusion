@@ -44,7 +44,7 @@ function [azimuthYaw, elevationPitch, roll, DCM, coordinateSystem] = yawPitchRol
         dot(X, x),  dot(Y, x),  dot(Z, x);
         dot(X, y),  dot(Y, y),  dot(Z, y);
         dot(X, z),  dot(Y, z),  dot(Z, z);
-        ];
+        ]'; % note the inverse to represent the local frame
 
     % extract angles
     cosPitchYsinRollX = -DCM(2,3);
