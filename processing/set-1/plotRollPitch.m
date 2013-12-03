@@ -2,30 +2,31 @@ clear all; home;
 
 % define the data set folder
 %dataSetFolder = '../../data/set-1/tilt-around-x-pointing-forward';
-dataSetFolder = '../../data/set-1/tilt-around-y-pointing-left';
-%dataSetFolder = '../../data/set-1/tilt-around-z-pointing-up';
+%dataSetFolder = '../../data/set-1/tilt-around-y-pointing-left';
+dataSetFolder = '../../data/set-1/tilt-around-z-pointing-up';
 
 %% Load the data
 [accelerometer, ~, compass, ~] = loadData(dataSetFolder);
 
+% resample the time series
+[accelerometer, compass] = lerpTimeSeries(accelerometer, compass);
+
+% extract time vector
+time = accelerometer.Time;
+N = accelerometer.Length;
+
 % Calibrate data
-accelerometer = calibrateAccelerometer(accelerometer);
-compass = calibrateCompass(compass);
+acceleration = calibrateAccelerometer(accelerometer.Data);
+compass = calibrateCompass(compass.Data);
 
-% Extract data for plotting
-timeAcceleration = accelerometer(:,1);
-acceleration = accelerometer(:,2:4);
-timeCompass = compass(:,1);
-compass = compass(:, [2 4 3]); % error in data, sensor axes are swapped
-
-N = min(length(timeAcceleration), length(timeCompass));
-time = timeAcceleration(1:N);
+% fix for HMC5883L
+compass = [compass(:,1), compass(:,3), compass(:,2)];
 
 %% Get roll, pitch and yaw
 
 ypr = zeros(N, 3);
 for i=1:N
-    a = acceleration(i, :);
+    a = acceleration(i, :) .* [1, 1, -1]; % fix for MPU6050
     m = compass(i, :);
     [yaw, pitch, roll] = yawPitchRoll(a, m);
     ypr(i, :) = [yaw pitch roll];
@@ -88,7 +89,7 @@ axisAccel(1) = subplot(3, 4, 1, ...
     'Color', plotBackground ...
     );
 
-t = timeAcceleration;
+t = time;
 x = acceleration(:, 1);
 line(t, x, ...
     'Parent', axisAccel(1), ...
@@ -114,7 +115,7 @@ axisAccel(2) = subplot(3, 4, 5, ...
     'Color', plotBackground ...
     );
 
-t = timeAcceleration;
+t = time;
 y = acceleration(:, 2);
 line(t, y, ...
     'Parent', axisAccel(2), ...
@@ -137,7 +138,7 @@ axisAccel(3) = subplot(3, 4, 9, ...
     'Color', plotBackground ...
     );
 
-t = timeAcceleration;
+t = time;
 z = acceleration(:, 3);
 line(t, z, ...
     'Parent', axisAccel(3), ...
@@ -161,7 +162,7 @@ axisCompass(1) = subplot(3, 4, 2, ...
     'Color', plotBackground ...
     );
 
-t = timeCompass;
+t = time;
 x = compass(:, 1);
 line(t, x, ...
     'Parent', axisCompass(1), ...
@@ -187,7 +188,7 @@ axisCompass(2) = subplot(3, 4, 6, ...
     'Color', plotBackground ...
     );
 
-t = timeCompass;
+t = time;
 y = compass(:, 2);
 line(t, y, ...
     'Parent', axisCompass(2), ...
@@ -210,7 +211,7 @@ axisCompass(3) = subplot(3, 4, 10, ...
     'Color', plotBackground ...
     );
 
-t = timeCompass;
+t = time;
 z = compass(:, 3);
 line(t, z, ...
     'Parent', axisCompass(3), ...

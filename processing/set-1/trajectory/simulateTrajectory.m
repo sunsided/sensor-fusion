@@ -1,7 +1,7 @@
 %clear all; close all; clc; home;
 
 % define the data set folder
-dataSet = 'rotate-360ccw-around-y-pointing-left';
+dataSet = 'rotate-360ccw-around-x-pointing-forward';
 dataSetFolder = fullfile(fileparts(which(mfilename)), '..', '..' , '..', 'data', 'set-1', dataSet);
 
 % add parent folder to path
@@ -9,7 +9,10 @@ path(fullfile(fileparts(which(mfilename)), '..'), path);
 
 %% Load the data
 [accelerometer, gyroscope, magnetometer, temperature] = loadData(dataSetFolder);
-N = min(size(accelerometer,1), size(magnetometer,1));
+
+% resample the time series
+[accelerometer, magnetometer] = lerpTimeSeries(accelerometer, magnetometer);
+N = accelerometer.Length;
 
 %% Prepare Plots
 preparePlotTrajectory(dataSet);
@@ -19,15 +22,13 @@ angles1 = NaN(N,3);
 angles2 = NaN(N,3);
 
 %% Animation
-for n=1:N
+for n=1:1:N
 
     % Fetch accelerometer axes
-    a = accelerometer(n, 2:4);
+    a = accelerometer.Data(n, :);
     
     % Fetch magnetometer axes
-    m = [magnetometer(n, 2);
-         magnetometer(n, 3);
-         magnetometer(n, 4)]';
+    m = magnetometer.Data(n, :);
     
     % Calibrate values
     a = calibrateAccelerometer(a);
@@ -120,24 +121,27 @@ for n=1:N
     
     
     % plot the orientation
-    if mod(n,10) == 0
+    if mod(n,30) == 0
         plotTrajectory(m);
     end
 end
 
 figure('Name', ['Axes: ' dataSet], 'NumberTitle', 'off');
+
 subplot(3,1,1);
-plot(angles1(:,1)); hold on;
-plot(angles2(:,1), 'k');
+plot(angles1(:,1), ':', 'Color', [0.5 0.5 1]); hold on;
+plot(angles2(:,1), 'k+', 'MarkerSize', 4);
 ylim([0 360]);
-xlabel('t'); ylabel('heading (tMx)');
+xlabel('t'); ylabel('roll (\theta M_z)');
+
 subplot(3,1,2);
 plot(angles1(:,2)); hold on;
-plot(angles2(:,2), 'k'); hold on;
+plot(angles2(:,2), 'k+', 'MarkerSize', 4); hold on;
 ylim([0 360]);
-xlabel('t'); ylabel('theta y');
+xlabel('t'); ylabel('pitch (\theta M_y)');
+
 subplot(3,1,3);
 plot(angles1(:,3)); hold on;
-plot(angles2(:,3), 'k');
+plot(angles2(:,3), 'k+', 'MarkerSize', 4, 'Color', [0.5 0.5 0.5]);
 ylim([0 360]);
-xlabel('t'); ylabel('theta z');
+xlabel('t'); ylabel('heading (\theta M_x)');

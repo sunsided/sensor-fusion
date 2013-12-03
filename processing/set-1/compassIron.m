@@ -7,9 +7,9 @@ dataSetFolder = '../../data/set-1/tilt-sphere';
 [~, ~, magnetometer, temperature] = loadData(dataSetFolder);
 
 % Fetch axes
-x = magnetometer(:, 2);
-y = magnetometer(:, 3);
-z = magnetometer(:, 4);
+x = magnetometer.Data(:, 1);
+y = magnetometer.Data(:, 3); % fix for HMC5883L
+z = magnetometer.Data(:, 2); % fix for HMC5883L
 N = size(x, 1);
 
 % Calibrate sensor
