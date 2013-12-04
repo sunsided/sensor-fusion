@@ -1,4 +1,4 @@
-function [azimuthYaw, elevationPitch, roll, DCM, coordinateSystem] = yawPitchRoll(accelerometer, magnetometer)
+function [azimuthYaw, elevationPitch, roll, DCM, coordinateSystem, q] = yawPitchRoll(accelerometer, magnetometer)
 
     %% Define local coordinate system
 
@@ -44,15 +44,48 @@ function [azimuthYaw, elevationPitch, roll, DCM, coordinateSystem] = yawPitchRol
         dot(X, x),  dot(Y, x),  dot(Z, x);
         dot(X, y),  dot(Y, y),  dot(Z, y);
         dot(X, z),  dot(Y, z),  dot(Z, z);
-        ]'; % note the inverse to represent the local frame
+        ];
 
     % extract angles
     % see: William Premerlani, "Computing Euler Angles from Direction Cosines"
-    %      Indices differ from his version due to the transposed DCM.
-    pitchY = -asind(DCM(3, 1));
-    rollX = atan2d(DCM(3, 2), DCM(3, 3));
-    yawZ = atan2d(DCM(2, 1), DCM(1, 1));
+    pitchY = -asind(DCM(1, 3));
+    rollX = atan2d(DCM(2, 3), DCM(3, 3));
+    yawZ = atan2d(DCM(1, 2), DCM(1, 1));
 
+    %% Build quaternion ... need to verify
+    
+    q = NaN(4,1);
+    q(1) = sqrt(0.25 * (1 + DCM(1, 1) + DCM(2, 2) + DCM(3, 3)));
+    q(2) = sqrt(0.25 * (1 + DCM(1, 1) - DCM(2, 2) - DCM(3, 3)));
+    q(3) = sqrt(0.25 * (1 - DCM(1, 1) + DCM(2, 2) - DCM(3, 3)));
+    q(4) = sqrt(0.25 * (1 - DCM(1, 1) - DCM(2, 2) + DCM(3, 3)));
+    
+    % find the maximum component
+    [~, idx] = max(q);
+    
+    % rebuild other components from that
+    switch idx
+        case 1
+            q(2) = (DCM(3, 2) - DCM(2, 3)) / (4*q(1));
+            q(3) = (DCM(1, 3) - DCM(3, 1)) / (4*q(1));
+            q(4) = (DCM(2, 1) - DCM(1, 2)) / (4*q(1));
+        case 2
+            q(1) = (DCM(3, 2) - DCM(2, 3)) / (4*q(1));
+            q(3) = (DCM(2, 1) - DCM(1, 2)) / (4*q(1));
+            q(4) = (DCM(1, 3) - DCM(3, 1)) / (4*q(1));
+        case 3
+            q(1) = (DCM(1, 3) - DCM(3, 1)) / (4*q(1));
+            q(2) = (DCM(2, 1) - DCM(1, 2)) / (4*q(1));
+            q(4) = (DCM(3, 2) - DCM(2, 3)) / (4*q(1));
+        case 4
+            q(1) = (DCM(2, 1) - DCM(1, 2)) / (4*q(1));
+            q(2) = (DCM(1, 3) - DCM(3, 1)) / (4*q(1));
+            q(3) = (DCM(3, 2) - DCM(2, 3)) / (4*q(1));
+    end
+    
+    % normalize
+    q = q/norm(q);
+    
     %% Fetch angles
 
     % heading in the X/Y plane
@@ -64,4 +97,7 @@ function [azimuthYaw, elevationPitch, roll, DCM, coordinateSystem] = yawPitchRol
     % roll in the Z/Y plane
     roll = rollX;
 
+    % transpose to represent the local frame
+    DCM = DCM';
+    
 end

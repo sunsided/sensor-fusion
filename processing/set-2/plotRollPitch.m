@@ -18,11 +18,13 @@ compass = calibrateCompass(compass.Data);
 %% Get roll, pitch and yaw
 disp('Looping ...');
 ypr = zeros(N, 3);
+quat = zeros(N, 4);
 for i=1:N   
     a = acceleration(i, :);
     m = compass(i, :);
-    [yaw, pitch, roll, DCM] = yawPitchRoll(a, m);
+    [yaw, pitch, roll, DCM, ~, q] = yawPitchRoll(a, m);
     ypr(i, :) = [yaw pitch roll];
+    quat(i, :) = q;
     
     %if time(i) > 7
         %disp(num2str(DCM));
