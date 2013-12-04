@@ -8,7 +8,8 @@ clear all; close all; clc; home;
 %dataSetFolder = '../../data/set-1/rotate-360ccw-around-x-pointing-forward';
 
 %% Load the data
-dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-up');
+%dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-up');
+dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'roll-and-tilt-at-45-90');
 [accelerometer, gyroscope, magnetometer, temperature] = loadData(dataSetFolder);
 
 % resample the time series

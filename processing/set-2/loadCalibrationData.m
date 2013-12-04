@@ -57,11 +57,11 @@ function data = loadAccelerometerCalibrationData
     [accelerometerZup, ~, ~, ~] = loadData(dataSetFolder);
     
     % Load the data: x pointing up
-    dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'unmoved-with-z-pointing-forward-and-x-up');
+    dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'unmoved-with-z-pointing-front-and-x-up');
     [accelerometerXup, ~, ~, ~] = loadData(dataSetFolder);
     
     % Load the data: z pointing left
-    dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'unmoved-with-z-pointing-forward-and-y-down');
+    dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'unmoved-with-z-pointing-front-and-y-down');
     [accelerometerZleft, ~, ~, ~] = loadData(dataSetFolder);
 
     % Determine x-axis offset and variance
