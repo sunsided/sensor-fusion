@@ -42,7 +42,7 @@ for n=1:2:N
     % Normalize for later use
     an = a/norm(a);
     mn = m/norm(m);
-          
+    
     % Debugging
     msg = sprintf('acc: %+1.3f %+1.3f %+1.3f mag: %+1.3f %+1.3f %+1.3f', ... 
                     a(1), a(2), a(3), m(1), m(2), m(3));
@@ -54,8 +54,9 @@ for n=1:2:N
     % rotate relative to original rotation.
     if isempty(baseDCM)
         baseDCM = DCM';
+    else
+        DCM = DCM*baseDCM;
     end
-    DCM = DCM*baseDCM;
     
     % plot the orientation
     plotOrientation(DCM, coordinateSystem, an, mn);
