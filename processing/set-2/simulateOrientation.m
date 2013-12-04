@@ -47,7 +47,7 @@ for n=1:2:N
     if isempty(baseDCM)
         baseDCM = DCM';
     else
-        %DCM = DCM*baseDCM;
+        DCM = DCM*baseDCM;
     end
     
     % plot the orientation

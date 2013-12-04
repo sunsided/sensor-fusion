@@ -4,7 +4,7 @@ function txyzCalibrated = calibrateAccelerometer(txyz, mode)
 
     % ellipsoid fitting disabled by default, because it does not seem to work that well
     if ~exist('mode', 'var')
-        mode = 0;
+        mode = 1;
     end
     
     if mode == 0

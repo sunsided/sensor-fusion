@@ -17,7 +17,7 @@ y = [y; accelerometer.Data(:, 2)];
 z = [z; accelerometer.Data(:, 3)];
 
 %% next data set
-dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'unmoved-with-z-pointing-forward-and-x-up');
+dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'unmoved-with-z-pointing-front-and-x-up');
 [accelerometer, ~, ~, ~] = loadData(dataSetFolder);
 
 % Fetch axes
@@ -26,7 +26,7 @@ y = [y; accelerometer.Data(:, 2)];
 z = [z; accelerometer.Data(:, 3)];
 
 %% next data set
-dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'unmoved-with-z-pointing-forward-and-y-down');
+dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'unmoved-with-z-pointing-front-and-y-down');
 [accelerometer, ~, ~, ~] = loadData(dataSetFolder);
 
 % Fetch axes
