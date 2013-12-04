@@ -1,7 +1,7 @@
 clear all; home;
 
 %% Load the data
-dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-y-pointing-left');
+dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'roll-and-tilt-at-45-90');
 [accelerometer, ~, compass, ~] = loadData(dataSetFolder);
 
 % resample the time series
@@ -16,13 +16,17 @@ acceleration = calibrateAccelerometer(accelerometer.Data);
 compass = calibrateCompass(compass.Data);
 
 %% Get roll, pitch and yaw
-
+disp('Looping ...');
 ypr = zeros(N, 3);
-for i=1:N
+for i=1:N   
     a = acceleration(i, :);
     m = compass(i, :);
-    [yaw, pitch, roll] = yawPitchRoll(a, m);
+    [yaw, pitch, roll, DCM] = yawPitchRoll(a, m);
     ypr(i, :) = [yaw pitch roll];
+    
+    %if time(i) > 7
+        %disp(num2str(DCM));
+    %end
 end
 
 %{
