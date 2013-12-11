@@ -1,6 +1,9 @@
 %% Accelerometer calibration data
 function data = loadAccelerometerCalibrationData
 
+    % Load data functions
+    path(fullfile(fileparts(which(mfilename)), '..'), path);
+
     %% Calibrate using ellipsoid fitting
     
      % define the data set folder
@@ -23,7 +26,7 @@ function data = loadAccelerometerCalibrationData
     
 
     % Load the data: x pointing forward
-    dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', '..', 'data', 'set-2', 'unmoved-with-x-pointing-forward');
+    dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', '..', 'data', 'set-2', 'unmoved-with-x-pointing-forward-10min');
     [Zup, ~, ~, ~] = loadData(dataSetFolder);
     
     % Load the data: x pointing up

@@ -1,6 +1,9 @@
 %% Magnetometer calibration data
 function data = loadCompassCalibationData
     
+    % Load data functions
+    path(fullfile(fileparts(which(mfilename)), '..'), path);
+
     % define the data set folder
     dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', '..', 'data', 'set-2', 'full-sphere');
 
