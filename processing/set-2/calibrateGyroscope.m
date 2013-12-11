@@ -1,7 +1,7 @@
-function txyzCalibrated = calibrateCompass(txyz)
+function txyzCalibrated = calibrateGyroscope(txyz)
 
-    [~, compassCalibrationData, ~] = loadCalibrationData();
-    correctionMatrix = compassCalibrationData.correctionMatrix;
+    [~, ~, gyroscopeCalibrationData] = loadCalibrationData();
+    correctionMatrix = gyroscopeCalibrationData.correctionMatrix;
 
     N = size(txyz(:,1));
     

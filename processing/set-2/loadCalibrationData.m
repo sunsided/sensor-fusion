@@ -1,4 +1,4 @@
-function [accelerometer, magnetometer] =  loadCalibrationData
+function [accelerometer, magnetometer, gyroscope] =  loadCalibrationData
 % loadCalibrationData Loads sensor calibration data and populates global variables with the data to be used by the calibration functions.
 
     % Load calibration functions
@@ -9,8 +9,6 @@ function [accelerometer, magnetometer] =  loadCalibrationData
     if ~exist('compassCalibrationData', 'var') || isempty(compassCalibrationData)
         disp('Loading magnetometer calibration data.');
         compassCalibrationData = loadCompassCalibationData();
-    else
-        %disp('Using existing compass calibration data.');
     end
     magnetometer = compassCalibrationData;
 
@@ -19,9 +17,15 @@ function [accelerometer, magnetometer] =  loadCalibrationData
     if ~exist('accelerometerCalibrationData', 'var') || isempty(accelerometerCalibrationData)
         disp('Loading accelerometer calibration data.');
         accelerometerCalibrationData = loadAccelerometerCalibrationData();
-    else
-        %disp('Using existing accelerometer calibration data.');
     end
     accelerometer = accelerometerCalibrationData;
+    
+     % Load gyroscope data
+    global gyroscopeCalibrationData
+    if ~exist('gyroscopeCalibrationData', 'var') || isempty(gyroscopeCalibrationData)
+        disp('Loading gyroscope calibration data.');
+        gyroscopeCalibrationData = loadGyroscopeCalibrationData();
+    end
+    gyroscope = gyroscopeCalibrationData;
     
 end

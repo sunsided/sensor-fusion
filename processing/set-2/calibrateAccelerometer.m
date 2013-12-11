@@ -1,6 +1,6 @@
 function txyzCalibrated = calibrateAccelerometer(txyz, mode)
 
-    [accelerometerCalibrationData, ~] = loadCalibrationData();
+    [accelerometerCalibrationData, ~, ~] = loadCalibrationData();
 
     % ellipsoid fitting disabled by default, because it does not seem to work that well
     if ~exist('mode', 'var')
