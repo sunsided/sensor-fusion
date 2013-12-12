@@ -48,10 +48,20 @@ function [azimuthYaw, elevationPitch, roll, DCM, coordinateSystem, q] = yawPitch
 
     % extract angles
     % see: William Premerlani, "Computing Euler Angles from Direction Cosines"
-    pitchY = -asind(DCM(1, 3));
-    rollX = atan2d(DCM(2, 3), DCM(3, 3));
-    yawZ = atan2d(DCM(1, 2), DCM(1, 1));
+    pitchY(1) = -asind(DCM(1, 3));
+    rollX(1) = atan2d(DCM(2, 3), DCM(3, 3));
+    yawZ(1) = atan2d(DCM(1, 2), DCM(1, 1));
 
+%{
+    pitchY(2) = radtodeg(dot(cross(z, Z), y));
+    yawZ(2) = radtodeg(dot(cross(x, X), z)); 
+    rollX(2) = radtodeg(dot(cross(y, Y), X));
+%}
+    
+    pitchY(2) = asind(dot(cross(Z, z), y));
+    yawZ(2) = asind(dot(cross(X, x), z)); 
+    rollX(2) = asind(dot(cross(Y, y), x));
+    
     %% Build quaternion ... need to verify
     
     q = NaN(4,1);
@@ -59,7 +69,7 @@ function [azimuthYaw, elevationPitch, roll, DCM, coordinateSystem, q] = yawPitch
     q(2) = sqrt(0.25 * (1 + DCM(1, 1) - DCM(2, 2) - DCM(3, 3)));
     q(3) = sqrt(0.25 * (1 - DCM(1, 1) + DCM(2, 2) - DCM(3, 3)));
     q(4) = sqrt(0.25 * (1 - DCM(1, 1) - DCM(2, 2) + DCM(3, 3)));
-    
+
     % find the maximum component
     [~, idx] = max(q);
     
