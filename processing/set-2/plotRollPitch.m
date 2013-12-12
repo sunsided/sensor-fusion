@@ -2,26 +2,22 @@ clear all; home;
 
 %% Load the data
 dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'roll-and-tilt-at-45-90');
-[accelerometer, ~, compass, ~] = loadData(dataSetFolder);
+[accelerometer, ~, compass, ~] = loadData(dataSetFolder, true);
 
 % resample the time series
-[accelerometer, compass] = lerpTimeSeries(accelerometer, compass);
+[acceleration, compass] = lerpTimeSeries(accelerometer, compass);
 
 % extract time vector
-time = accelerometer.Time;
-N = accelerometer.Length;
-
-% Calibrate data
-acceleration = calibrateAccelerometer(accelerometer.Data);
-compass = calibrateMagnetometer(compass.Data);
+time = acceleration.Time;
+N = acceleration.Length;
 
 %% Get roll, pitch and yaw
 disp('Looping ...');
 ypr = zeros(N, 3);
 quat = zeros(N, 4);
 for i=1:N   
-    a = acceleration(i, :);
-    m = compass(i, :);
+    a = acceleration.Data(i, :);
+    m = compass.Data(i, :);
     [yaw, pitch, roll, DCM, ~, q] = yawPitchRoll(a, m);
     ypr(i, :) = [yaw pitch roll];
     quat(i, :) = q;
@@ -89,7 +85,7 @@ axisAccel(1) = subplot(3, 4, 1, ...
     );
 
 t = time;
-x = acceleration(:, 1);
+x = acceleration.Data(:, 1);
 line(t, x, ...
     'Parent', axisAccel(1), ...
     'Color', lineColor(1, :) ...
@@ -115,7 +111,7 @@ axisAccel(2) = subplot(3, 4, 5, ...
     );
 
 t = time;
-y = acceleration(:, 2);
+y = acceleration.Data(:, 2);
 line(t, y, ...
     'Parent', axisAccel(2), ...
     'Color', lineColor(2, :) ...
@@ -138,7 +134,7 @@ axisAccel(3) = subplot(3, 4, 9, ...
     );
 
 t = time;
-z = acceleration(:, 3);
+z = acceleration.Data(:, 3);
 line(t, z, ...
     'Parent', axisAccel(3), ...
     'Color', lineColor(3, :) ...
@@ -162,7 +158,7 @@ axisCompass(1) = subplot(3, 4, 2, ...
     );
 
 t = time;
-x = compass(:, 1);
+x = compass.Data(:, 1);
 line(t, x, ...
     'Parent', axisCompass(1), ...
     'Color', lineColor(1, :) ...
@@ -188,7 +184,7 @@ axisCompass(2) = subplot(3, 4, 6, ...
     );
 
 t = time;
-y = compass(:, 2);
+y = compass.Data(:, 2);
 line(t, y, ...
     'Parent', axisCompass(2), ...
     'Color', lineColor(2, :) ...
@@ -211,7 +207,7 @@ axisCompass(3) = subplot(3, 4, 10, ...
     );
 
 t = time;
-z = compass(:, 3);
+z = compass.Data(:, 3);
 line(t, z, ...
     'Parent', axisCompass(3), ...
     'Color', lineColor(3, :) ...

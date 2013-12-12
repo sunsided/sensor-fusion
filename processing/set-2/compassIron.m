@@ -13,6 +13,7 @@ z = magnetometer.Data(:, 2); % fix for HMC5883L
 N = size(x, 1);
 
 % Calibrate sensor
+path(fullfile(fileparts(which(mfilename)), 'calibration'), path);
 [correction, xc, yc, zc] = calibrateByEllipseFitting(x, y, z);
 
 % Apply combined correction matrix

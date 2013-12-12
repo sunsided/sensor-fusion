@@ -1,9 +1,6 @@
-%% Magnetometer calibration data
+%% Gyroscope calibration data
 function data = loadGyroscopeCalibrationData
     
-    % Load data functions
-    path(fullfile(fileparts(which(mfilename)), '..'), path);
-
     % Load the data: x pointing forward
     dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', '..', 'data', 'set-2', 'unmoved-with-x-pointing-forward-10min');
     [~, Zup, ~, ~] = loadData(dataSetFolder, false);

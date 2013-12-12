@@ -63,4 +63,5 @@ z = [z; accelerometer.Data(:, 3)];
 
 
 %% Calibrate sensor
+path(fullfile(fileparts(which(mfilename)), 'calibration'), path);
 calibrateByEllipseFitting(x, y, z);

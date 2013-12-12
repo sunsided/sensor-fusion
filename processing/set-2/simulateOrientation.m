@@ -10,7 +10,7 @@ clear all; close all; clc; home;
 %% Load the data
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-up');
 dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'roll-and-tilt-at-45-90');
-[accelerometer, gyroscope, magnetometer, temperature] = loadData(dataSetFolder);
+[accelerometer, gyroscope, magnetometer, temperature] = loadData(dataSetFolder, true);
 
 % resample the time series
 [accelerometer, magnetometer] = lerpTimeSeries(accelerometer, magnetometer);
@@ -26,10 +26,6 @@ for n=1:2:N
     % Fetch sensor axes
     a = accelerometer.Data(n, :);
     m = magnetometer.Data(n, :);
-   
-    % Calibrate values
-    a = calibrateAccelerometer(a);
-    m = calibrateMagnetometer(m);
       
     % Normalize for later use
     an = a/norm(a);

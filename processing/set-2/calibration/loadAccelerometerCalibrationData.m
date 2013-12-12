@@ -1,9 +1,6 @@
 %% Accelerometer calibration data
 function data = loadAccelerometerCalibrationData
 
-    % Load data functions
-    path(fullfile(fileparts(which(mfilename)), '..'), path);
-
     %% Calibrate using ellipsoid fitting
     
      % define the data set folder

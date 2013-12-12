@@ -21,6 +21,8 @@ function [accel, gyro, compass, temp] = loadData(dataSetFolder, calibrate)
     
     % calibrate if requested
     if exist('calibrate', 'var') && calibrate == true
+        path(fullfile(fileparts(which(mfilename)), 'calibration'), path);
+        
         accelerometer(:,2:4) = calibrateAccelerometer(accelerometer(:,2:4));
         gyroscope(:,2:4) = calibrateGyroscope(gyroscope(:,2:4));        
         magnetometer(:,2:4) = calibrateMagnetometer(magnetometer(:,2:4));

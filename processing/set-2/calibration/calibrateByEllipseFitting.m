@@ -20,8 +20,7 @@ function [correction, xc, yc, zc] = calibrateByEllipseFitting(x, y, z)
     global ellipseFittingLink
 
     % include Yury Petrov's ellipsoid fit
-    dataSetFolder = fullfile(fileparts(which(mfilename)), 'ellipsoid_fit');
-    path(dataSetFolder, path);
+    path(fullfile(fileparts(which(mfilename)), 'ellipsoid_fit'), path);
 
     % fit ellipse
     [center, radii, evecs, ~] = ellipsoid_fit([x y z]);
