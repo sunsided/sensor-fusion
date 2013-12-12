@@ -1,27 +1,20 @@
 clear all; home;
 
 % define the data set folder
-dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'unmoved-with-x-pointing-forward');
+dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'unmoved-with-x-pointing-forward-10min');
 performOffsetCorrection = true;
 
 %% Load the data
-[accelerometer, ~, ~, ~] = loadData(dataSetFolder);
-
+[accelerometer, ~, ~, ~] = loadData(dataSetFolder, true);
 time = accelerometer.Time;
 
 %% Derive additional data from raw input by integrating
 scaleg2a = 9.81; % g to m/2^2
 acceleration = accelerometer.Data(:,1:3)*scaleg2a;
 
-% Calculate means
-accelerationMean = mean(acceleration);
-if performOffsetCorrection
-    N = length(time);
-    for i=1:N
-        acceleration(i, :)  = acceleration(i, :) - accelerationMean;
-    end
-    accelerationMean = [0 0 0];
-end
+% Subtract mean from acceleration to get linear acceleration 
+% (which should be zero)
+acceleration = acceleration - ones(size(acceleration, 1), 1)*mean(acceleration);
 
 % Get derived data
 velocity =     cumsum(acceleration(:,1:3));
@@ -55,16 +48,9 @@ axisAccel(1) = subplot(3, 3, 1, ...
 
 t = time;
 x = acceleration(:, 1);
-mx = accelerationMean(:, 1);
 line(t, x, ...
     'Parent', axisAccel(1), ...
     'Color', lineColor(1, :) ...
-    ); 
-hold on;
-line(t, mx, ...
-    'Parent', axisAccel(1), ...
-    'Color', meanColor, ...
-    'LineStyle', ':' ...
     ); 
 
 xlim([0 t(end)]);
@@ -87,17 +73,10 @@ axisAccel(2) = subplot(3, 3, 4, ...
 
 t = time;
 y = acceleration(:, 2);
-my = accelerationMean(:, 2);
 line(t, y, ...
     'Parent', axisAccel(2), ...
     'Color', lineColor(2, :) ...
     );
-hold on;
-line(t, my, ...
-    'Parent', axisAccel(2), ...
-    'Color', meanColor, ...
-    'LineStyle', ':' ...
-    ); 
 
 xlim([0 t(end)]);
 
@@ -116,17 +95,10 @@ axisAccel(3) = subplot(3, 3, 7, ...
 
 t = time;
 z = acceleration(:, 3);
-mz = accelerationMean(:, 3);
 line(t, z, ...
     'Parent', axisAccel(3), ...
     'Color', lineColor(3, :) ...
     );
-hold on;
-line(t, mz, ...
-    'Parent', axisAccel(3), ...
-    'Color', meanColor, ...
-    'LineStyle', ':' ...
-    ); 
 
 xlim([0 t(end)]);
 
