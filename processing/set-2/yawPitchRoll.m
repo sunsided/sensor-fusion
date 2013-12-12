@@ -59,7 +59,7 @@ function [azimuthYaw, elevationPitch, roll, DCM, coordinateSystem, q] = yawPitch
 %}
     
     pitchY(2) = asind(dot(cross(Z, z), y));
-    yawZ(2) = asind(dot(cross(X, x), z)); 
+    yawZ(2) = asind(dot(cross(Y, x), z)); 
     rollX(2) = asind(dot(cross(Y, y), x));
     
     %% Build quaternion ... need to verify
