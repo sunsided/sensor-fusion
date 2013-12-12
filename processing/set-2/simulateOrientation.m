@@ -29,7 +29,7 @@ for n=1:2:N
    
     % Calibrate values
     a = calibrateAccelerometer(a);
-    m = calibrateCompass(m);
+    m = calibrateMagnetometer(m);
       
     % Normalize for later use
     an = a/norm(a);

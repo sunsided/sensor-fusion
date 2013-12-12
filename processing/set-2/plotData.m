@@ -2,7 +2,7 @@ clear all; home;
 
 %% Load the data
 dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'roll-and-tilt-at-45-90');
-[accelerometer, gyroscope, magnetometer, temperature] = loadData(dataSetFolder);
+[accelerometer, gyroscope, magnetometer, temperature] = loadData(dataSetFolder, false);
 
 %% Plot data
 figureHandle = figure('Name', 'Raw sensor data', ...

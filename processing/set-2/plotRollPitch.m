@@ -13,7 +13,7 @@ N = accelerometer.Length;
 
 % Calibrate data
 acceleration = calibrateAccelerometer(accelerometer.Data);
-compass = calibrateCompass(compass.Data);
+compass = calibrateMagnetometer(compass.Data);
 
 %% Get roll, pitch and yaw
 disp('Looping ...');

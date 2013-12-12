@@ -8,7 +8,7 @@ function data = loadCompassCalibationData
     dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', '..', 'data', 'set-2', 'full-sphere');
 
     % Load the data
-    [~, ~, magnetometer, ~] = loadData(dataSetFolder);
+    [~, ~, magnetometer, ~] = loadData(dataSetFolder, false);
 
     % Fetch axes
     x = magnetometer.Data(:, 1);
@@ -24,15 +24,15 @@ function data = loadCompassCalibationData
     
     % Load the data: x pointing forward
     dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', '..', 'data', 'set-2', 'unmoved-with-x-pointing-forward');
-    [~, ~, Zup, ~] = loadData(dataSetFolder);
+    [~, ~, Zup, ~] = loadData(dataSetFolder, false);
     
     % Load the data: x pointing up
     dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', '..', 'data', 'set-2', 'unmoved-with-z-pointing-front-and-x-up');
-    [~, ~, Xup, ~] = loadData(dataSetFolder);
+    [~, ~, Xup, ~] = loadData(dataSetFolder, false);
     
     % Load the data: z pointing left
     dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', '..', 'data', 'set-2', 'unmoved-with-z-pointing-front-and-y-down');
-    [~, ~, Zfront, ~] = loadData(dataSetFolder);
+    [~, ~, Zfront, ~] = loadData(dataSetFolder, false);
     
     % perform drift correction
     [~,    Zup] = determineDrift(Zup);

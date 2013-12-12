@@ -1,4 +1,4 @@
-function [accelerometer, magnetometer, gyroscope] =  loadCalibrationData
+function [accelerometer, gyroscope, magnetometer] =  loadCalibrationData
 % loadCalibrationData Loads sensor calibration data and populates global variables with the data to be used by the calibration functions.
 
     % Load calibration functions

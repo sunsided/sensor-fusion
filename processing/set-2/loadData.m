@@ -1,4 +1,4 @@
-function [accel, gyro, compass, temp] = loadData(dataSetFolder)
+function [accel, gyro, compass, temp] = loadData(dataSetFolder, calibrate)
 
     currentFolder = cd(dataSetFolder);
     try
@@ -13,9 +13,23 @@ function [accel, gyro, compass, temp] = loadData(dataSetFolder)
     end
     cd(currentFolder);
 
-    accel = timeseries(accelBuffer(:,2:4), accelBuffer(:,1), 'Name', 'Accelerometer');
-    gyro = timeseries(gyroBuffer(:,2:4), gyroBuffer(:,1), 'Name', 'Gyroscope');
-    compass = timeseries(compassBuffer(:,2:4), compassBuffer(:,1), 'Name', 'Magnetometer');
-    temp = timeseries(temperatureBuffer(:,2), temperatureBuffer(:,1), 'Name', 'Temperature');
+    % create local copies as calls to calibrare... will overwrite them
+    accelerometer = accelBuffer;
+    gyroscope = gyroBuffer;
+    magnetometer = compassBuffer;
+    temperature = temperatureBuffer;
+    
+    % calibrate if requested
+    if exist('calibrate', 'var') && calibrate == true
+        accelerometer(:,2:4) = calibrateAccelerometer(accelerometer(:,2:4));
+        gyroscope(:,2:4) = calibrateGyroscope(gyroscope(:,2:4));        
+        magnetometer(:,2:4) = calibrateMagnetometer(magnetometer(:,2:4));
+    end
+    
+    % construct timeseries objects
+    accel = timeseries(accelerometer(:,2:4), accelerometer(:,1), 'Name', 'Accelerometer');
+    gyro = timeseries(gyroscope(:,2:4), gyroscope(:,1), 'Name', 'Gyroscope');
+    compass = timeseries(magnetometer(:,2:4), magnetometer(:,1), 'Name', 'Magnetometer');
+    temp = timeseries(temperature(:,2), temperature(:,1), 'Name', 'Temperature');
     
 end

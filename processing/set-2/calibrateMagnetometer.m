@@ -1,7 +1,7 @@
-function xyzCalibrated = calibrateGyroscope(xyz)
+function xyzCalibrated = calibrateMagnetometer(xyz)
 
-    [~, gyroscopeCalibrationData, ~] = loadCalibrationData();
-    correction = gyroscopeCalibrationData.correctionMatrix;
+    [~, ~, compassCalibrationData] = loadCalibrationData();
+    correction = compassCalibrationData.correctionMatrix;
 
     vector = [ ...
         xyz(:,1)'; ...

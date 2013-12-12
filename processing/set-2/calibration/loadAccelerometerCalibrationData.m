@@ -10,7 +10,7 @@ function data = loadAccelerometerCalibrationData
     dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', '..', 'data', 'set-2', 'full-sphere');
 
     % Load the data
-    [accelerometer, ~, ~, ~] = loadData(dataSetFolder);
+    [accelerometer, ~, ~, ~] = loadData(dataSetFolder, false);
     
     % Fetch axes
     x = accelerometer.Data(:, 1);
@@ -27,15 +27,15 @@ function data = loadAccelerometerCalibrationData
 
     % Load the data: x pointing forward
     dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', '..', 'data', 'set-2', 'unmoved-with-x-pointing-forward-10min');
-    [Zup, ~, ~, ~] = loadData(dataSetFolder);
+    [Zup, ~, ~, ~] = loadData(dataSetFolder, false);
     
     % Load the data: x pointing up
     dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', '..', 'data', 'set-2', 'unmoved-with-z-pointing-front-and-x-up');
-    [Xup, ~, ~, ~] = loadData(dataSetFolder);
+    [Xup, ~, ~, ~] = loadData(dataSetFolder, false);
     
     % Load the data: z pointing left
     dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', '..', 'data', 'set-2', 'unmoved-with-z-pointing-front-and-y-down');
-    [Zfront, ~, ~, ~] = loadData(dataSetFolder);
+    [Zfront, ~, ~, ~] = loadData(dataSetFolder, false);
 
     %{
     % Determine x-axis offset and variance
