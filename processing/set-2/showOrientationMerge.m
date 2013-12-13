@@ -15,7 +15,8 @@ time = acceleration.Time;
 N = acceleration.Length;
 
 %% Get roll, pitch and yaw
-disp('Looping ...');
+hwb = waitbar(0, 'Calculating states ...');
+
 ypr = zeros(N, 3);
 ypr2 = zeros(N, 3);
 ypr3 = zeros(N, 3);
@@ -150,7 +151,10 @@ for i=1:N
     %}
     
     oldOrientation = coordinateSystem;
+    
+    waitbar(i/N, hwb);
 end
+close(hwb);
 
 %% Plot data
 figureHandle = figure('Name', 'Raw and derived inertial sensor data', ...
@@ -361,7 +365,7 @@ ylim([-180 180]);
 title('Roll', ...
     'Color', titleColor ...
     );
-ylabel('angle [°]');
+ylabel('angle [ï¿½]');
 xlabel('t [s]');
 legendHandle = legend('roll');
 set(legendHandle, 'TextColor', [1 1 1]);
@@ -408,7 +412,7 @@ ylim([-180 180]);
 title('Pitch (elevation)', ...
     'Color', titleColor ...
     );
-ylabel('angle [°]');
+ylabel('angle [ï¿½]');
 xlabel('t [s]');
 legendHandle = legend('pitch');
 set(legendHandle, 'TextColor', [1 1 1]);
@@ -456,7 +460,7 @@ ylim([-180 180]);
 title('Yaw (azimuth)', ...
     'Color', titleColor ...
     );
-ylabel('angle [°]');
+ylabel('angle [ï¿½]');
 xlabel('t [s]');
 legendHandle = legend('yaw');
 set(legendHandle, 'TextColor', [1 1 1]);

@@ -12,7 +12,7 @@ time = acceleration.Time;
 N = acceleration.Length;
 
 %% Get roll, pitch and yaw
-disp('Looping ...');
+hwb = waitbar(0, 'Calculating states ...');
 ypr = zeros(N, 3);
 quat = zeros(N, 4);
 for i=1:N   
@@ -25,7 +25,9 @@ for i=1:N
     %if time(i) > 7
         %disp(num2str(DCM));
     %end
+    waitbar(i/N, hwb);
 end
+close(hwb);
 
 %{
 % correct yaw for modulo breaks
@@ -246,7 +248,7 @@ ylim([-180 180]);
 title('Roll', ...
     'Color', titleColor ...
     );
-ylabel('angle [°]');
+ylabel('angle [ï¿½]');
 xlabel('t [s]');
 legendHandle = legend('roll');
 set(legendHandle, 'TextColor', [1 1 1]);
@@ -277,7 +279,7 @@ ylim([-180 180]);
 title('Pitch (elevation)', ...
     'Color', titleColor ...
     );
-ylabel('angle [°]');
+ylabel('angle [ï¿½]');
 xlabel('t [s]');
 legendHandle = legend('pitch');
 set(legendHandle, 'TextColor', [1 1 1]);
@@ -308,7 +310,7 @@ ylim([-180 180]);
 title('Yaw (azimuth)', ...
     'Color', titleColor ...
     );
-ylabel('angle [°]');
+ylabel('angle [ï¿½]');
 xlabel('t [s]');
 legendHandle = legend('yaw');
 set(legendHandle, 'TextColor', [1 1 1]);
