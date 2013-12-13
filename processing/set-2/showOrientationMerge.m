@@ -1,9 +1,10 @@
 clear all; home;
 
 %% Load the data
-%dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'roll-and-tilt-at-45-90');
+dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'roll-and-tilt-at-45-90');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-forward');
-dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-up');
+%dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-y-pointing-left');
+%dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-up');
 [accelerometer, ~, compass, ~] = loadData(dataSetFolder, true);
 
 % resample the time series
@@ -17,13 +18,15 @@ N = acceleration.Length;
 disp('Looping ...');
 ypr = zeros(N, 3);
 ypr2 = zeros(N, 3);
+ypr3 = zeros(N, 3);
 
 oldDCM = zeros(3);
+oldOrientation = zeros(1,3);
 
 for i=1:N   
     a = acceleration.Data(i, :);
     m = compass.Data(i, :);
-    [yaw, pitch, roll, DCM, ~, ~] = yawPitchRoll(a, m);
+    [yaw, pitch, roll, DCM, coordinateSystem, ~] = yawPitchRoll(a, m);
     ypr(i,:) = [yaw, pitch, roll];
     
     % calculate the difference of the rotation and hence the 
@@ -34,11 +37,11 @@ for i=1:N
     om_yawZ = atan2d(difference(1, 2), difference(1, 1));
     
     % integrate the angular velocity
-    old_ypr = ypr(i, :);
+    old_ypr2 = ypr(i, :);
     if i > 1
-        old_ypr = ypr2(i-1, :);
+        old_ypr2 = ypr2(i-1, :);
     end
-    ypr2(i, :) = old_ypr + [om_yawZ, om_pitchY, om_rollX];
+    ypr2(i, :) = old_ypr2 + [om_yawZ, om_pitchY, om_rollX];
 
     % clamp the angular velocity to +/-180 degree
     if ypr2(i,1) > 180
@@ -58,40 +61,96 @@ for i=1:N
     elseif ypr2(i,3) < -180
         ypr2(i,3) = ypr2(i,3) + 360;
     end
-    
+        
     % save current DCM for next iteration
     oldDCM = DCM;
     
-    %if time(i) > 7
-        %disp(num2str(DCM));
-    %end
+    
+    
+    % integrate the angular velocity
+    if i == 1
+        oldOrientation = coordinateSystem;
+    end
+    difference = coordinateSystem - oldOrientation;
+    X = [1 0 0];
+    Y = [0 1 0];
+    Z = [0 0 1];
+    
+    x = difference(1,:) + X;
+    y = difference(2,:) + Y;
+    z = difference(3,:) + Z;
+    
+    %{
+    x = x/norm(x);
+    y = y/norm(y);
+    z = z/norm(z);
+    %}
+    
+    
+    DCM = [ ...
+        dot(x, X),  dot(y, X),  dot(z, X);
+        dot(x, Y),  dot(y, Y),  dot(z, Y);
+        dot(x, Z),  dot(y, Z),  dot(z, Z);
+        ];
+    
+    
+    %{
+    om_yawZ   = asind( dot(cross(x, [1 0 0]), [0 0 1]));
+    om_rollX  = asind( dot(cross(y, [0 1 0]), [1 0 0]));
+    om_pitchY = asind( dot(cross(x, [1 0 0]), [0 1 0]));
+    %}
+    %{
+    om_yawZ   = asind( 0.5 * (dot(cross(x, [1 0 0]), [0 0 1]) + dot(cross(y, [0 1 0]), [0 0 1])));
+    om_rollX  = asind( 0.5 * (dot(cross(y, [0 1 0]), [1 0 0]) + dot(cross(z, [0 0 1]), [1 0 0])));
+    om_pitchY = asind( 0.5 * (dot(cross(x, [1 0 0]), [0 1 0]) + dot(cross(z, [0 0 1]), [0 1 0])));
+    %}
+    %{
+    om_yawZ   = atan2(  dot(cross(x, [0 1 0]), [0 0 1]), dot(cross(x, [1 0 0]), [0 0 1]));
+    om_rollX  = asind( 0.5 * (dot(cross(y, [0 1 0]), [1 0 0]) + dot(cross(z, [0 0 1]), [1 0 0])));
+    om_pitchY = asind( 0.5 * (dot(cross(x, [1 0 0]), [0 1 0]) + dot(cross(z, [0 0 1]), [0 1 0])));
+    %}
+    
+    om_pitchY = -asind(DCM(1, 3));
+    om_rollX = atan2d(DCM(2, 3), DCM(3, 3));
+    om_yawZ = atan2d(DCM(1, 2), DCM(1, 1));
+    
+
+    %{
+    om_pitchY = -asind(dot(z, X));
+    om_rollX = atan2d(dot(z, Y), dot(z, Z));
+    om_yawZ = atan2d(dot(y, X), dot(x, X));
+    %}
+    
+    % integrate the angular velocity
+    old_ypr3 = ypr(i, :);
+    if i > 1
+        old_ypr3 = ypr3(i-1, :);
+    end
+    ypr3(i, :) = old_ypr3 + [om_yawZ, om_pitchY, om_rollX];
+
+    %{
+    % clamp the angular velocity to +/-180 degree
+    if ypr3(i,1) > 180
+        ypr3(i,1) = ypr3(i,1) - 360;
+    elseif ypr3(i,1) < -180
+        ypr3(i,1) = ypr3(i,1) + 360;
+    end
+    
+    if ypr3(i,2) > 180
+        ypr3(i,2) = ypr3(i,2) - 360;
+    elseif ypr3(i,2) < -180
+        ypr3(i,2) = ypr3(i,2) + 360;
+    end
+    
+    if ypr3(i,3) > 180
+        ypr3(i,3) = ypr3(i,3) - 360;
+    elseif ypr3(i,3) < -180
+        ypr3(i,3) = ypr3(i,3) + 360;
+    end
+    %}
+    
+    oldOrientation = coordinateSystem;
 end
-
-%{
-% correct yaw for modulo breaks
-yawDiff = diff(ypr(:,1));
-indices = find(yawDiff < -90);
-yawDiff(indices) = yawDiff(indices) + 360;
-indices = find(yawDiff > 90);
-yawDiff(indices) = yawDiff(indices) - 360;
-ypr(:,1) = [0; cumsum(yawDiff(:))] + ypr(1,1);
-
-% correct pitch for modulo breaks
-pitchDiff = diff(ypr(:,2));
-indices = find(pitchDiff < -90);
-pitchDiff(indices) = pitchDiff(indices) + 360;
-indices = find(pitchDiff > 90);
-pitchDiff(indices) = pitchDiff(indices) - 360;
-ypr(:,2) = [0; cumsum(pitchDiff(:))] + ypr(1,2);
-
-% correct rool for modulo breaks
-rollDiff = diff(ypr(:,3));
-indices = find(rollDiff < -90);
-rollDiff(indices) = rollDiff(indices) + 360;
-indices = find(rollDiff > 90);
-rollDiff(indices) = rollDiff(indices) - 360;
-ypr(:,3) = [0; cumsum(rollDiff(:))] + ypr(1,3);
-%}
 
 %% Plot data
 figureHandle = figure('Name', 'Raw and derived inertial sensor data', ...
@@ -287,6 +346,14 @@ line(t, roll, ...
     'MarkerSize', 2, ...
     'Color', [1 1 1] ...
     ); 
+roll = ypr3(:, 3);
+line(t, roll, ...
+    'Parent', axisRpy(1), ...
+    'LineStyle', 'none', ...
+    'Marker', '.', ...
+    'MarkerSize', 2, ...
+    'Color', [1 0 0] ...
+    ); 
 
 xlim([0 t(end)]);
 ylim([-180 180]);
@@ -326,6 +393,14 @@ line(t, pitch, ...
     'MarkerSize', 2, ...
     'Color', [1 1 1] ...
     ); 
+pitch = ypr3(:, 2);
+line(t, pitch, ...
+    'Parent', axisRpy(2), ...
+    'LineStyle', 'none', ...
+    'Marker', '.', ...
+    'MarkerSize', 2, ...
+    'Color', [1 0 0] ...
+    ); 
 
 xlim([0 t(end)]);
 ylim([-180 180]);
@@ -364,6 +439,14 @@ line(t, yaw, ...
     'Marker', '.', ...
     'MarkerSize', 2, ...
     'Color', [1 1 1] ...
+    ); 
+yaw = ypr3(:, 3);
+line(t, yaw, ...
+    'Parent', axisRpy(3), ...
+    'LineStyle', 'none', ...
+    'Marker', '.', ...
+    'MarkerSize', 2, ...
+    'Color', [1 0 0] ...
     ); 
 
 
