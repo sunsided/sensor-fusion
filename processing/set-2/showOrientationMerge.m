@@ -64,6 +64,7 @@ for i=1:N
     end
         
     % save current DCM for next iteration
+    diffDCM = difference;
     oldDCM = DCM;
     
     
@@ -81,12 +82,9 @@ for i=1:N
     y = difference(2,:) + Y;
     z = difference(3,:) + Z;
     
-    %{
     x = x/norm(x);
     y = y/norm(y);
-    z = z/norm(z);
-    %}
-    
+    z = z/norm(z);    
     
     DCM = [ ...
         dot(x, X),  dot(y, X),  dot(z, X);
@@ -110,9 +108,9 @@ for i=1:N
     om_rollX  = asind( 0.5 * (dot(cross(y, [0 1 0]), [1 0 0]) + dot(cross(z, [0 0 1]), [1 0 0])));
     om_pitchY = asind( 0.5 * (dot(cross(x, [1 0 0]), [0 1 0]) + dot(cross(z, [0 0 1]), [0 1 0])));
     %}
-    
-    om_pitchY = -asind(DCM(1, 3));
+
     om_rollX = atan2d(DCM(2, 3), DCM(3, 3));
+    om_pitchY = -asind(DCM(1, 3));
     om_yawZ = atan2d(DCM(1, 2), DCM(1, 1));
     
 
@@ -444,7 +442,7 @@ line(t, yaw, ...
     'MarkerSize', 2, ...
     'Color', [1 1 1] ...
     ); 
-yaw = ypr3(:, 3);
+yaw = ypr3(:, 1);
 line(t, yaw, ...
     'Parent', axisRpy(3), ...
     'LineStyle', 'none', ...
