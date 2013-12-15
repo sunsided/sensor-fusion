@@ -32,27 +32,7 @@ for i=1:N
     if i > 1
         ypr_gyro_current = [gyroscope.Data(i, 3) gyroscope.Data(i, 2) gyroscope.Data(i, 1)];
         dt = gyroscope.Time(i) - gyroscope.Time(i-1);
-        
         ypr_gyro(i, :) = ypr_gyro(i-1, :) + ypr_gyro_current * dt;
-        
-         % clamp the angular velocity to +/-180 degree
-        if ypr_gyro(i,1) > 180
-            ypr_gyro(i,1) = ypr_gyro(i,1) - 360;
-        elseif ypr2(i,1) < -180
-            ypr_gyro(i,1) = ypr_gyro(i,1) + 360;
-        end
-
-        if ypr_gyro(i,2) > 180
-            ypr_gyro(i,2) = ypr_gyro(i,2) - 360;
-        elseif ypr2(i,2) < -180
-            ypr_gyro(i,2) = ypr_gyro(i,2) + 360;
-        end
-
-        if ypr_gyro(i,3) > 180
-            ypr_gyro(i,3) = ypr_gyro(i,3) - 360;
-        elseif ypr_gyro(i,3) < -180
-            ypr_gyro(i,3) = ypr_gyro(i,3) + 360;
-        end
     end
     
     % fetch RPY from accelerometer and magnetometer
@@ -74,25 +54,6 @@ for i=1:N
         old_ypr2 = ypr2(i-1, :);
     end
     ypr2(i, :) = old_ypr2 + [om_yawZ, om_pitchY, om_rollX];
-
-    % clamp the angular velocity to +/-180 degree
-    if ypr2(i,1) > 180
-        ypr2(i,1) = ypr2(i,1) - 360;
-    elseif ypr2(i,1) < -180
-        ypr2(i,1) = ypr2(i,1) + 360;
-    end
-    
-    if ypr2(i,2) > 180
-        ypr2(i,2) = ypr2(i,2) - 360;
-    elseif ypr2(i,2) < -180
-        ypr2(i,2) = ypr2(i,2) + 360;
-    end
-    
-    if ypr2(i,3) > 180
-        ypr2(i,3) = ypr2(i,3) - 360;
-    elseif ypr2(i,3) < -180
-        ypr2(i,3) = ypr2(i,3) + 360;
-    end
         
     % save current DCM for next iteration
     diffDCM = difference;
@@ -157,33 +118,16 @@ for i=1:N
         old_ypr3 = ypr3(i-1, :);
     end
     ypr3(i, :) = old_ypr3 + [om_yawZ, om_pitchY, om_rollX];
-
-    %{
-    % clamp the angular velocity to +/-180 degree
-    if ypr3(i,1) > 180
-        ypr3(i,1) = ypr3(i,1) - 360;
-    elseif ypr3(i,1) < -180
-        ypr3(i,1) = ypr3(i,1) + 360;
-    end
-    
-    if ypr3(i,2) > 180
-        ypr3(i,2) = ypr3(i,2) - 360;
-    elseif ypr3(i,2) < -180
-        ypr3(i,2) = ypr3(i,2) + 360;
-    end
-    
-    if ypr3(i,3) > 180
-        ypr3(i,3) = ypr3(i,3) - 360;
-    elseif ypr3(i,3) < -180
-        ypr3(i,3) = ypr3(i,3) + 360;
-    end
-    %}
     
     oldOrientation = coordinateSystem;
     
     waitbar(i/N, hwb);
 end
 close(hwb);
+
+% clamp angles to -180..180
+ypr2 = clampangle(ypr2);
+ypr_gyro = clampangle(ypr_gyro);
 
 %% Plot data
 figureHandle = figure('Name', 'Raw and derived inertial sensor data', ...
