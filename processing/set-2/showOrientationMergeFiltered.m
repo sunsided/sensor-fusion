@@ -1,10 +1,10 @@
 clear all; home;
 
 %% Load the data
-dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'roll-and-tilt-at-45-90');
+%dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'roll-and-tilt-at-45-90');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-forward');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-y-pointing-left');
-%dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-up');
+dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-up');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-z-pointing-up');
 [accelerometer, gyroscope, compass, ~] = loadData(dataSetFolder, true);
 
@@ -188,6 +188,7 @@ close(hwb);
 % clamp angles to -180..180
 ypr2 = clampangle(ypr2);
 ypr_gyro = clampangle(ypr_gyro);
+ypr_kf = clampangle(ypr_kf);
 
 %% Plot data
 figureHandle = figure('Name', 'Raw and derived inertial sensor data', ...
