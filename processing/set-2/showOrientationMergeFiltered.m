@@ -164,9 +164,11 @@ for i=1:N
          0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 1 0;
          0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 1];
     
-    % Kalman Filter: Prediction
-    [x, P] = kf_predict(x, A, P, lambda);
-    
+    % Kalman Filter: Initial Prediction
+    if i == 0
+        [x, P] = kf_predict(x, A, P, lambda);
+    end
+     
     % Measurement vector
     z = [ypr2(i, 1) ypr2(i, 2) ypr2(i, 3), ypr_gyro(i, 1) ypr_gyro(i, 2) ypr_gyro(i, 3), ypr_gyro_current(1) ypr_gyro_current(2) ypr_gyro_current(3)]';
     
@@ -175,6 +177,9 @@ for i=1:N
     
     ypr_kf(i, :) = x(1:3);
     omega_kf(i, :) = [x(9), x(8), x(7)];
+    
+    % Kalman Filter: Predict
+    [x, P] = kf_predict(x, A, P, lambda);
     
     waitbar(i/N, hwb);
 end
