@@ -26,9 +26,9 @@ N = acceleration.Length;
 x = [0 0 0, 0 0 0, 0 0 0]';
 
 % state covariance matrix
-vg(1) = 100*compass.UserData.variance(1);
-vg(2) = 100*compass.UserData.variance(2);
-vg(3) = 100*compass.UserData.variance(3);
+vg(1) = 1; % 100*compass.UserData.variance(1);
+vg(2) = 1; % 100*compass.UserData.variance(2);
+vg(3) = 1; % 100*compass.UserData.variance(3);
 
 P = [0.9 0 0, 1 0 0, 0 0 0;
      0 0.9 0, 0 1 0, 0 0 0;
@@ -65,6 +65,7 @@ ypr = zeros(N, 3);
 ypr2 = zeros(N, 3);
 ypr_kf = zeros(N, 3);
 ypr_gyro = zeros(N, 3);
+omega_kf = zeros(N, 3);
 
 oldDCM = zeros(3);
 
@@ -130,6 +131,7 @@ for i=1:N
     [x, P] = kf_update(x, z, P, H);
     
     ypr_kf(i, :) = x(1:3);
+    omega_kf(i, :) = [x(9), x(8), x(7)];
     
     waitbar(i/N, hwb);
 end
@@ -418,6 +420,15 @@ line(t, roll, ...
     'MarkerSize', 2, ...
     'Color', lineColor(4, :) ...
     ); 
+hold on;
+roll = omega_kf(:,1);
+line(t, roll, ...
+    'Parent', axisRpy(7), ...
+    'LineStyle', 'none', ...
+    'Marker', '.', ...
+    'MarkerSize', 2, ...
+    'Color', [1 1 1] ...
+    ); 
 
 xlim([0 t(end)]);
 ylim([-180 180]);
@@ -427,7 +438,7 @@ title('Roll', ...
     );
 ylabel('angle [\circ]');
 xlabel('t [s]');
-legendHandle = legend('gyro');
+legendHandle = legend('gyro', 'gyro_{kf}');
 set(legendHandle, 'TextColor', [1 1 1]);
 
 %% Pitch
@@ -449,6 +460,15 @@ line(t, pitch, ...
     'MarkerSize', 2, ...
     'Color', lineColor(5, :) ...
     ); 
+hold on;
+pitch = omega_kf(:,2);
+line(t, pitch, ...
+    'Parent', axisRpy(8), ...
+    'LineStyle', 'none', ...
+    'Marker', '.', ...
+    'MarkerSize', 2, ...
+    'Color', [1 1 1] ...
+    ); 
 
 xlim([0 t(end)]);
 ylim([-180 180]);
@@ -458,7 +478,7 @@ title('Pitch (elevation)', ...
     );
 ylabel('angle [\circ]');
 xlabel('t [s]');
-legendHandle = legend('gyro');
+legendHandle = legend('gyro', 'gyro_{kf}');
 set(legendHandle, 'TextColor', [1 1 1]);
 
 %% Yaw
@@ -480,7 +500,15 @@ line(t, yaw, ...
     'MarkerSize', 2, ...
     'Color', lineColor(6, :) ...
     ); 
-
+hold on;
+yaw = omega_kf(:,3);
+line(t, yaw, ...
+    'Parent', axisRpy(9), ...
+    'LineStyle', 'none', ...
+    'Marker', '.', ...
+    'MarkerSize', 2, ...
+    'Color', [1 1 1] ...
+    ); 
 
 xlim([0 t(end)]);
 ylim([-180 180]);
@@ -490,7 +518,7 @@ title('Yaw (azimuth, heading)', ...
     );
 ylabel('angle [\circ]');
 xlabel('t [s]');
-legendHandle = legend('gyro');
+legendHandle = legend('gyro', 'gyro_{kf}');
 set(legendHandle, 'TextColor', [1 1 1]);
 
 
