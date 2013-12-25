@@ -58,6 +58,9 @@ H = eye(size(P));
 % measurement covariance matrix
 R = P;
 
+% Lambda coefficient for artificial increase of covariance
+lambda = 0.99;
+
 %% Get roll, pitch and yaw
 hwb = waitbar(0, 'Calculating states ...');
 
@@ -71,7 +74,7 @@ oldDCM = zeros(3);
 
 for i=1:N
     % fetch RPY from integrated gyro
-    ypr_gyro(i, :) = [0, 0, 0];    
+    ypr_gyro(i, :) = [0, 0, 0];
     ypr_gyro_current = [0 0 0];
     if i > 1
         ypr_gyro_current = [gyroscope.Data(i, 3) -gyroscope.Data(i, 2) -gyroscope.Data(i, 1)];
@@ -121,7 +124,7 @@ for i=1:N
           0 0 0, 0 0 0, 0 0 1];
     
     % Kalman Filter: Prediction
-    [x, P] = kf_predict(x, A, P);
+    [x, P] = kf_predict(x, A, P, lambda);
     
     % Measurement vector
     z = [ypr2(i, 1) ypr2(i, 2) ypr2(i, 3), ypr_gyro(i, 1) ypr_gyro(i, 2) ypr_gyro(i, 3), ypr_gyro_current(1) ypr_gyro_current(2) ypr_gyro_current(3)]';

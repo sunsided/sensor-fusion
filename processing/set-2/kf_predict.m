@@ -1,7 +1,7 @@
 function [x, P] = kf_predict(x, A, P, lambda, u, B, Q)
 
     if ~exist('lambda', 'var')
-        lambda = 0.99;
+        lambda = 0.999;
     end
 
     if nargin == 3 || nargin == 4
