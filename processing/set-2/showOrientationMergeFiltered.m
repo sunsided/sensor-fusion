@@ -26,9 +26,9 @@ N = acceleration.Length;
 x = [0 0 0, 0 0 0, 0 0 0]';
 
 % state covariance matrix
-P = [1 0 0, 1 0 0, 0 0 0;
-     0 1 0, 0 1 0, 0 0 0;
-     0 0 1, 0 0 1, 0 0 0;
+P = [0.9 0 0, 1 0 0, 0 0 0;
+     0 0.9 0, 0 1 0, 0 0 0;
+     0 0 0.9, 0 0 1, 0 0 0;
      1 0 0, 1 0 0, 0 0 0;
      0 1 0, 0 1 0, 0 0 0;
      0 0 1, 0 0 1, 0 0 0;     
@@ -59,6 +59,7 @@ hwb = waitbar(0, 'Calculating states ...');
 
 ypr = zeros(N, 3);
 ypr2 = zeros(N, 3);
+ypr_kf = zeros(N, 3);
 ypr_gyro = zeros(N, 3);
 
 oldDCM = zeros(3);
@@ -87,7 +88,7 @@ for i=1:N
     om_yawZ = atan2d(difference(1, 2), difference(1, 1));
     
     % integrate the angular velocity
-    old_ypr2 = ypr(i, :);
+    old_ypr2 = [0 0 0]; % ypr(i, :);
     if i > 1
         old_ypr2 = ypr2(i-1, :);
     end
@@ -98,7 +99,7 @@ for i=1:N
     oldDCM = DCM;
 
     % Prepare Kalman Filter
-    T = 0;
+    T = 0.1;
     if i > 1
         T = gyroscope.Time(i) - gyroscope.Time(i-1);
     end
@@ -118,11 +119,13 @@ for i=1:N
     [x, P] = kf_predict(x, A, P);
     
     % Measurement vector
-    z = [ypr(1) ypr(2) ypr(3), ypr_gyro(i, 1) ypr_gyro(i, 2) ypr_gyro(i, 3), ypr_gyro_current(1) ypr_gyro_current(2) ypr_gyro_current(3)]';
+    z = [ypr2(i, 1) ypr2(i, 2) ypr2(i, 3), ypr_gyro(i, 1) ypr_gyro(i, 2) ypr_gyro(i, 3), ypr_gyro_current(1) ypr_gyro_current(2) ypr_gyro_current(3)]';
     
     % Kalman Filter: Measurement Update
     %[x, P] = kf_update(x, z, P, H, R);
     [x, P] = kf_update(x, z, P, H);
+    
+    ypr_kf(i, :) = x(1:3);
     
     waitbar(i/N, hwb);
 end
@@ -289,7 +292,16 @@ line(t, roll, ...
     'Marker', '.', ...
     'MarkerSize', 2, ...
     'Color', lineColor(4, :) ...
-    ); 
+    );  
+hold on;
+roll = ypr_kf(:, 3);
+line(t, roll, ...
+    'Parent', axisRpy(4), ...
+    'LineStyle', 'none', ...
+    'Marker', '.', ...
+    'MarkerSize', 2, ...
+    'Color', [1 1 1] ...
+    );
 
 xlim([0 t(end)]);
 ylim([-180 180]);
@@ -299,7 +311,7 @@ title('Roll', ...
     );
 ylabel('angle [\circ]');
 xlabel('t [s]');
-legendHandle = legend('gyro int');
+legendHandle = legend('gyro int', 'kf');
 set(legendHandle, 'TextColor', [1 1 1]);
 
 %% Pitch
@@ -321,6 +333,15 @@ line(t, pitch, ...
     'MarkerSize', 2, ...
     'Color', lineColor(5, :) ...
     ); 
+hold on;
+pitch = ypr_kf(:, 2);
+line(t, pitch, ...
+    'Parent', axisRpy(5), ...
+    'LineStyle', 'none', ...
+    'Marker', '.', ...
+    'MarkerSize', 2, ...
+    'Color', [1 1 1] ...
+    );
 
 xlim([0 t(end)]);
 ylim([-180 180]);
@@ -330,7 +351,7 @@ title('Pitch (elevation)', ...
     );
 ylabel('angle [\circ]');
 xlabel('t [s]');
-legendHandle = legend('gyro int');
+legendHandle = legend('gyro int', 'kf');
 set(legendHandle, 'TextColor', [1 1 1]);
 
 %% Yaw
@@ -352,7 +373,15 @@ line(t, yaw, ...
     'MarkerSize', 2, ...
     'Color', lineColor(6, :) ...
     ); 
-
+hold on;
+yaw = ypr_kf(:, 1);
+line(t, yaw, ...
+    'Parent', axisRpy(6), ...
+    'LineStyle', 'none', ...
+    'Marker', '.', ...
+    'MarkerSize', 2, ...
+    'Color', [1 1 1] ...
+    );
 
 xlim([0 t(end)]);
 ylim([-180 180]);
@@ -362,7 +391,7 @@ title('Yaw (azimuth, heading)', ...
     );
 ylabel('angle [\circ]');
 xlabel('t [s]');
-legendHandle = legend('gyro int');
+legendHandle = legend('gyro int', 'kf');
 set(legendHandle, 'TextColor', [1 1 1]);
 
 
