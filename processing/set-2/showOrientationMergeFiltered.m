@@ -108,21 +108,21 @@ omega_kf = zeros(N, 3);
 oldDCM = zeros(3);
 
 for i=1:N
-    % fetch RPY from integrated gyro
-    ypr_gyro(i, :) = [0, 0, 0];
-    ypr_gyro_current = [0 0 0];
-    if i > 1
-        ypr_gyro_current = [gyroscope.Data(i, 3) -gyroscope.Data(i, 2) -gyroscope.Data(i, 1)];
-        dt = gyroscope.Time(i) - gyroscope.Time(i-1);
-        ypr_gyro(i, :) = ypr_gyro(i-1, :) + ypr_gyro_current * dt;
-    end
-    
     % fetch RPY from accelerometer and magnetometer
     a = acceleration.Data(i, :);
     m = compass.Data(i, :);
     [yaw, pitch, roll, DCM, coordinateSystem, ~] = yawPitchRoll(a, m);
     ypr(i,:) = [yaw, pitch, roll];
     
+    % fetch RPY from integrated gyro
+    ypr_gyro(i, :) = [yaw, pitch, roll];
+    ypr_gyro_current = [0 0 0];
+    if i > 1
+        ypr_gyro_current = [gyroscope.Data(i, 3) -gyroscope.Data(i, 2) -gyroscope.Data(i, 1)];
+        dt = gyroscope.Time(i) - gyroscope.Time(i-1);
+        ypr_gyro(i, :) = ypr_gyro(i-1, :) + ypr_gyro_current * dt;
+    end
+        
     % calculate the difference of the rotation and hence the 
     % angular velocity
     difference = DCM'*oldDCM;   
@@ -131,7 +131,7 @@ for i=1:N
     om_yawZ = atan2d(difference(1, 2), difference(1, 1));
     
     % integrate the angular velocity
-    old_ypr2 = [0 0 0]; % ypr(i, :);
+    old_ypr2 = [yaw pitch roll]; % ypr(i, :);
     if i > 1
         old_ypr2 = ypr2(i-1, :);
     end
@@ -165,7 +165,9 @@ for i=1:N
          0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 1];
     
     % Kalman Filter: Initial Prediction
-    if i == 0
+    if i == 1
+        x(1:3) = [yaw pitch roll];
+        x(4:6) = [yaw pitch roll];
         [x, P] = kf_predict(x, A, P, lambda);
     end
      

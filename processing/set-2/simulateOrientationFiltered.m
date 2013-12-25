@@ -141,7 +141,7 @@ for n=1:n_step:N
     end
     
     % Fetch rotation
-    [~, ~, ~, DCM, ~] = yawPitchRoll(a, m);
+    [yaw, pitch, roll, DCM, ~] = yawPitchRoll(a, m);
 
     % rotate relative to original rotation.
     
