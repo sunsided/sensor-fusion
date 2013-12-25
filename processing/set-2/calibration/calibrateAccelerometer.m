@@ -1,4 +1,4 @@
-function xyzCalibrated = calibrateAccelerometer(xyz)
+function [xyzCalibrated, correction] = calibrateAccelerometer(xyz)
     [accelerometerCalibrationData, ~, ~] = loadCalibrationData();
 
     correction = accelerometerCalibrationData.correctionMatrix;
@@ -11,4 +11,5 @@ function xyzCalibrated = calibrateAccelerometer(xyz)
     xyzCalibrated = correction * vector;
     
     xyzCalibrated = xyzCalibrated(1:3,:)';
+    correction = accelerometerCalibrationData;
 end

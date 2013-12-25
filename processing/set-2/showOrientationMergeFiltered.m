@@ -26,15 +26,19 @@ N = acceleration.Length;
 x = [0 0 0, 0 0 0, 0 0 0]';
 
 % state covariance matrix
+vg(1) = 100*compass.UserData.variance(1);
+vg(2) = 100*compass.UserData.variance(2);
+vg(3) = 100*compass.UserData.variance(3);
+
 P = [0.9 0 0, 1 0 0, 0 0 0;
      0 0.9 0, 0 1 0, 0 0 0;
      0 0 0.9, 0 0 1, 0 0 0;
      1 0 0, 1 0 0, 0 0 0;
      0 1 0, 0 1 0, 0 0 0;
      0 0 1, 0 0 1, 0 0 0;     
-     0 0 0, 0 0 0, 1 0 0;
-     0 0 0, 0 0 0, 0 1 0;
-     0 0 0, 0 0 0, 0 0 1];
+     0 0 0, 0 0 0, vg(1) 0 0;
+     0 0 0, 0 0 0, 0 vg(2) 0;
+     0 0 0, 0 0 0, 0 0 vg(3)];
  
 % state matrix
 T = 0.1;

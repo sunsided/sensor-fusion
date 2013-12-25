@@ -1,4 +1,4 @@
-function xyzCalibrated = calibrateMagnetometer(xyz)
+function [xyzCalibrated, correction] = calibrateMagnetometer(xyz)
 
     [~, ~, compassCalibrationData] = loadCalibrationData();
     correction = compassCalibrationData.correctionMatrix;
@@ -11,4 +11,5 @@ function xyzCalibrated = calibrateMagnetometer(xyz)
     xyzCalibrated = correction * vector;
     
     xyzCalibrated = xyzCalibrated(1:3,:)';
+    correction = compassCalibrationData;
 end

@@ -1,4 +1,4 @@
-function xyzCalibrated = calibrateGyroscope(xyz)
+function [xyzCalibrated, correction] = calibrateGyroscope(xyz)
 
     [~, gyroscopeCalibrationData, ~] = loadCalibrationData();
     correction = gyroscopeCalibrationData.correctionMatrix;
@@ -11,4 +11,5 @@ function xyzCalibrated = calibrateGyroscope(xyz)
     xyzCalibrated = correction * vector;
     
     xyzCalibrated = xyzCalibrated(1:3,:)';
+    correction = gyroscopeCalibrationData;
 end

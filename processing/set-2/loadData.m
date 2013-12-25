@@ -23,9 +23,13 @@ function [accel, gyro, compass, temp] = loadData(dataSetFolder, calibrate)
     if exist('calibrate', 'var') && calibrate == true
         path(fullfile(fileparts(which(mfilename)), 'calibration'), path);
         
-        accelerometer(:,2:4) = calibrateAccelerometer(accelerometer(:,2:4));
-        gyroscope(:,2:4) = calibrateGyroscope(gyroscope(:,2:4));        
-        magnetometer(:,2:4) = calibrateMagnetometer(magnetometer(:,2:4));
+        [accelerometer(:,2:4), accCalibration] = calibrateAccelerometer(accelerometer(:,2:4));
+        [gyroscope(:,2:4), gyroCalibration] = calibrateGyroscope(gyroscope(:,2:4));        
+        [magnetometer(:,2:4), magCalibration] = calibrateMagnetometer(magnetometer(:,2:4));
+    else
+        accCalibration = [];
+        gyroCalibration = [];
+        magCalibration = [];
     end
     
     % construct timeseries objects
@@ -33,5 +37,9 @@ function [accel, gyro, compass, temp] = loadData(dataSetFolder, calibrate)
     gyro = timeseries(gyroscope(:,2:4), gyroscope(:,1), 'Name', 'Gyroscope');
     compass = timeseries(magnetometer(:,2:4), magnetometer(:,1), 'Name', 'Magnetometer');
     temp = timeseries(temperature(:,2), temperature(:,1), 'Name', 'Temperature');
+    
+    accel.UserData = accCalibration;
+    gyro.UserData = gyroCalibration;
+    compass.UserData = magCalibration;
     
 end
