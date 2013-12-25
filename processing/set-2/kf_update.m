@@ -1,10 +1,5 @@
 function [x, P] = kf_update(x, z, P, H, R)
 
-    % measurement noise covariance matrix
-    if ~exist('R', 'var')
-        R = eye(size(P)) * 0.01;
-    end
-
     % measurement residuals (innovation)
     y = z - H*x;
     

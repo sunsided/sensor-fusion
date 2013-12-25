@@ -30,9 +30,9 @@ vg(1) = 1; % 100*compass.UserData.variance(1);
 vg(2) = 1; % 100*compass.UserData.variance(2);
 vg(3) = 1; % 100*compass.UserData.variance(3);
 
-P = [0.9 0 0, 1 0 0, 0 0 0;
-     0 0.9 0, 0 1 0, 0 0 0;
-     0 0 0.9, 0 0 1, 0 0 0;
+P = [1.9 0 0, 1 0 0, 0 0 0;
+     0 1.9 0, 0 1 0, 0 0 0;
+     0 0 1.9, 0 0 1, 0 0 0;
      1 0 0, 1 0 0, 0 0 0;
      0 1 0, 0 1 0, 0 0 0;
      0 0 1, 0 0 1, 0 0 0;     
@@ -55,8 +55,21 @@ A = [1 0 0, 0 0 0, T 0 0;
 % measurement transformation matrix
 H = eye(size(P));
 
-% measurement covariance matrix
-R = P;
+% measurement noise matrix
+%R = eye(size(P)) * 0.001;
+
+% values taken from cov of diffs of ypr2/ypr_gyro and ypr_kf due to lack of
+% better reference
+R = [10.087 0 0,        0.1   -0.67  1.24,      0 0 0;
+     0 6.1297 0,        -.18 -.065 0.43,        0 0 0;
+     0 0 8.8969,        -.26 -.05  -.02,        0 0 0;
+     .1 -.18 -.26,      11.7462 0 0,            0 0 0;
+     -0.67 -.065 -.05,  0 10.365 0,             0 0 0;
+     1.24 .43 -.02,     0 0 39.9315,            0 0 0;
+     0 0 0,             0 0 0,                  1 0 0;
+     0 0 0,             0 0 0,                  0 1 0;
+     0 0 0,             0 0 0,                  0 0 1];
+     
 
 % Lambda coefficient for artificial increase of covariance
 lambda = 0.99;
@@ -130,8 +143,7 @@ for i=1:N
     z = [ypr2(i, 1) ypr2(i, 2) ypr2(i, 3), ypr_gyro(i, 1) ypr_gyro(i, 2) ypr_gyro(i, 3), ypr_gyro_current(1) ypr_gyro_current(2) ypr_gyro_current(3)]';
     
     % Kalman Filter: Measurement Update
-    %[x, P] = kf_update(x, z, P, H, R);
-    [x, P] = kf_update(x, z, P, H);
+    [x, P] = kf_update(x, z, P, H, R);
     
     ypr_kf(i, :) = x(1:3);
     omega_kf(i, :) = [x(9), x(8), x(7)];
@@ -528,4 +540,4 @@ set(legendHandle, 'TextColor', [1 1 1]);
 
 %% Plot refining
 % link the axes
-linkaxes(axisRpy, 'x');
+linkaxes(axisRpy, 'xy');
