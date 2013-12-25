@@ -15,6 +15,45 @@ dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-
 time = acceleration.Time;
 N = acceleration.Length;
 
+%% Prepare the Kalman filter
+
+% State variables:
+% phi, psi, theta from integrated difference DCM
+% phi, psi, theta from integrated gyro
+% omega{phi, psi, theta} from direct gyro
+
+% state matrix
+x = [0 0 0, 0 0 0, 0 0 0]';
+
+% state covariance matrix
+P = [1 0 0, 1 0 0, 0 0 0;
+     0 1 0, 0 1 0, 0 0 0;
+     0 0 1, 0 0 1, 0 0 0;
+     1 0 0, 1 0 0, 0 0 0;
+     0 1 0, 0 1 0, 0 0 0;
+     0 0 1, 0 0 1, 0 0 0;     
+     0 0 0, 0 0 0, 1 0 0;
+     0 0 0, 0 0 0, 0 1 0;
+     0 0 0, 0 0 0, 0 0 1];
+ 
+% state matrix
+T = 0.1;
+A = [1 0 0, 0 0 0, T 0 0;
+     0 1 0, 0 0 0, 0 T 0;
+     0 0 1, 0 0 0, 0 0 T;
+     0 0 0, 1 0 0, T 0 0;
+     0 0 0, 0 1 0, 0 T 0;
+     0 0 0, 0 0 1, 0 0 T;
+     0 0 0, 0 0 0, 1 0 0;
+     0 0 0, 0 0 0, 0 1 0;
+     0 0 0, 0 0 0, 0 0 1];
+  
+% measurement transformation matrix
+H = eye(size(P));
+
+% measurement covariance matrix
+R = P;
+
 %% Get roll, pitch and yaw
 hwb = waitbar(0, 'Calculating states ...');
 
@@ -27,6 +66,7 @@ oldDCM = zeros(3);
 for i=1:N
     % fetch RPY from integrated gyro
     ypr_gyro(i, :) = [0, 0, 0];    
+    ypr_gyro_current = [0 0 0];
     if i > 1
         ypr_gyro_current = [gyroscope.Data(i, 3) -gyroscope.Data(i, 2) -gyroscope.Data(i, 1)];
         dt = gyroscope.Time(i) - gyroscope.Time(i-1);
@@ -56,6 +96,33 @@ for i=1:N
     % save current DCM for next iteration
     diffDCM = difference;
     oldDCM = DCM;
+
+    % Prepare Kalman Filter
+    T = 0;
+    if i > 1
+        T = gyroscope.Time(i) - gyroscope.Time(i-1);
+    end
+    
+     % state matrix
+     A = [1 0 0, 0 0 0, T 0 0;
+          0 1 0, 0 0 0, 0 T 0;
+          0 0 1, 0 0 0, 0 0 T;
+          0 0 0, 1 0 0, T 0 0;
+          0 0 0, 0 1 0, 0 T 0;
+          0 0 0, 0 0 1, 0 0 T;
+          0 0 0, 0 0 0, 1 0 0;
+          0 0 0, 0 0 0, 0 1 0;
+          0 0 0, 0 0 0, 0 0 1];
+    
+    % Kalman Filter: Prediction
+    [x, P] = kf_predict(x, A, P);
+    
+    % Measurement vector
+    z = [ypr(1) ypr(2) ypr(3), ypr_gyro(i, 1) ypr_gyro(i, 2) ypr_gyro(i, 3), ypr_gyro_current(1) ypr_gyro_current(2) ypr_gyro_current(3)]';
+    
+    % Kalman Filter: Measurement Update
+    %[x, P] = kf_update(x, z, P, H, R);
+    [x, P] = kf_update(x, z, P, H);
     
     waitbar(i/N, hwb);
 end

@@ -1,7 +1,7 @@
 function [x, P] = kf_update(x, z, P, H, R)
 
     % measurement noise covariance matrix
-    if ~isset('R', 'var')
+    if ~exist('R', 'var')
         R = zeros(size(P));
     end
 

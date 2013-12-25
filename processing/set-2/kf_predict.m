@@ -1,4 +1,4 @@
-function [x, P] = kf_predict(x, u, A, B, P, Q)
+function [x, P] = kf_predict(x, A, P, u, B, Q)
 
     if nargin == 3
         
