@@ -3,12 +3,12 @@ clear all; close all; clc; home;
 % define the data set folder
 %dataSetFolder = '../../data/set-1/unmoved-x-pointing-forward';
 %dataSetFolder = '../../data/set-1/unmoved-x-pointing-up';
-%dataSetFolder = '../../data/set-1/tilt-around-x-pointing-forward';
+dataSetFolder = '../../data/set-1/tilt-around-x-pointing-forward';
 %dataSetFolder = '../../data/set-1/rotate-360ccw-around-z-pointing-up';
 %dataSetFolder = '../../data/set-1/rotate-360ccw-around-x-pointing-forward';
 
 %% Load the data
-dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-up');
+%dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-up');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'roll-and-tilt-at-45-90');
 [accelerometer, gyroscope, magnetometer, temperature] = loadData(dataSetFolder, true);
 
@@ -128,8 +128,12 @@ for n=1:n_step:N
                     a(1), a(2), a(3), m(1), m(2), m(3));
     disp(msg);
     
+    
+    % Fetch rotation
+    [yaw, pitch, roll, DCM, ~] = yawPitchRoll(a, m);
+    
     % fetch RPY from integrated gyro
-    ypr_gyro = [0, 0, 0];
+    ypr_gyro = [yaw, pitch, roll];
     ypr_gyro_current = [0 0 0];
     dt = 0.01;
     if n > 1
@@ -137,13 +141,8 @@ for n=1:n_step:N
         
         ypr_gyro_current = [g(3) -g(2) -g(1)];
         ypr_gyro = ypr_gyro_last + ypr_gyro_current * dt;
-        ypr_gyro_last = ypr_gyro;
     end
-    
-    % Fetch rotation
-    [yaw, pitch, roll, DCM, ~] = yawPitchRoll(a, m);
-
-    % rotate relative to original rotation.
+    ypr_gyro_last = ypr_gyro;
     
     % calculate the difference of the rotation and hence the angular velocity
     difference = DCM'*oldDCM;   
@@ -152,11 +151,10 @@ for n=1:n_step:N
     om_yawZ = atan2d(difference(1, 2), difference(1, 1));
     
     % integrate the angular velocity
-    old_ypr = [0 0 0]; % ypr(i, :);
+    ypr = [yaw pitch roll];
     if n > 1
-        old_ypr = ypr_last;
+        ypr = ypr_last + [om_yawZ, om_pitchY, om_rollX];
     end
-    ypr = old_ypr + [om_yawZ, om_pitchY, om_rollX];
     ypr_last = ypr;
         
     % save current DCM for next iteration
@@ -182,6 +180,8 @@ for n=1:n_step:N
     
     % Kalman Filter: Prediction
     if n == 1
+        x(1:3) = [yaw pitch roll];
+        x(4:6) = [yaw pitch roll];
         [x, P] = kf_predict(x, A, P, lambda);
     end
     
@@ -192,9 +192,9 @@ for n=1:n_step:N
     [x, P] = kf_update(x, z, P, H, R);
     
     % Transform system based on Kalman Filtered data
-    yaw   = degtorad(x(1));
-    pitch = degtorad(x(2));
-    roll  = degtorad(x(3));
+    roll   =  degtorad(x(1));
+    pitch  = -degtorad(x(2));
+    yaw    = -degtorad(x(3));
     rotation = affine_rotation_x(roll) * affine_rotation_y(pitch) * affine_rotation_z(yaw);
     
     % Extract DCM
@@ -205,11 +205,13 @@ for n=1:n_step:N
     coordinateSystem = DCM*eye(3);
     
     % Change DCM base frame for display of the arrow
+    %{
     if isempty(baseDCM)
         baseDCM = DCM';
     else
         DCM = DCM*baseDCM;
     end
+    %}
             
     % Kalman Filter: Prediction
     [x, P] = kf_predict(x, A, P, lambda);
