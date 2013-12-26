@@ -1,10 +1,10 @@
 clear all; home;
 
 %% Load the data
-%dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'roll-and-tilt-at-45-90');
+dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'roll-and-tilt-at-45-90');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-forward');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-y-pointing-left');
-dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-up');
+%dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-up');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-z-pointing-up');
 [accelerometer, gyroscope, compass, ~] = loadData(dataSetFolder, true);
 
@@ -47,6 +47,8 @@ P = [1.9 0 0, 1 0 0, 0 0 0, 0 0 0, 0 0 0;
      0 0 0, 0 0 0, 0 0 0, 0 0 0, 1 0 0;
      0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 1 0;
      0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 1];
+P_mask = P;
+P_mask(P ~= 0) = 1;
  
 % state matrix
 T = 0.1;
@@ -171,11 +173,27 @@ for i=1:N
         [x, P] = kf_predict(x, A, P, lambda);
     end
      
+    % measurement transformation matrix
+    H = [1 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0;
+         0 1 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0;
+         0 0 1, 0 0 0, 0 0 0, 0 0 0, 0 0 0;
+         0 0 0, 1 0 0, 0 0 0, 0 0 0, T 0 0;
+         0 0 0, 0 1 0, 0 0 0, 0 0 0, 0 T 0;
+         0 0 0, 0 0 1, 0 0 0, 0 0 0, 0 0 T;
+         0 0 0, 0 0 0, 1 0 0, 0 0 0, 0 0 0;
+         0 0 0, 0 0 0, 0 1 0, 0 0 0, 0 0 0;
+         0 0 0, 0 0 0, 0 0 1, 0 0 0, 0 0 0];
+    
     % Measurement vector
-    z = [ypr2(i, 1) ypr2(i, 2) ypr2(i, 3), ypr_gyro(i, 1) ypr_gyro(i, 2) ypr_gyro(i, 3), ypr_gyro_current(1) ypr_gyro_current(2) ypr_gyro_current(3)]';
+    z = [ypr2(i, 1) ypr2(i, 2) ypr2(i, 3), ...
+         ypr_gyro(i, 1) ypr_gyro(i, 2) ypr_gyro(i, 3), ...
+         ypr_gyro_current(1) ypr_gyro_current(2) ypr_gyro_current(3)]';
     
     % Kalman Filter: Measurement Update
     [x, P] = kf_update(x, z, P, H, R);
+    
+    % Cancel out covariances known to not exist
+    %P = P .* P_mask;
     
     ypr_kf(i, :) = x(1:3);
     omega_kf(i, :) = [x(9), x(8), x(7)];
