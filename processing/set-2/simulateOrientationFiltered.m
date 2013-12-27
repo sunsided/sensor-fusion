@@ -3,13 +3,13 @@ clear all; close all; clc; home;
 % define the data set folder
 %dataSetFolder = '../../data/set-1/unmoved-x-pointing-forward';
 %dataSetFolder = '../../data/set-1/unmoved-x-pointing-up';
-dataSetFolder = '../../data/set-1/tilt-around-x-pointing-forward';
+%dataSetFolder = '../../data/set-1/tilt-around-x-pointing-forward';
 %dataSetFolder = '../../data/set-1/rotate-360ccw-around-z-pointing-up';
 %dataSetFolder = '../../data/set-1/rotate-360ccw-around-x-pointing-forward';
 
 %% Load the data
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-up');
-%dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'roll-and-tilt-at-45-90');
+dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'roll-and-tilt-at-45-90');
 [accelerometer, gyroscope, magnetometer, temperature] = loadData(dataSetFolder, true);
 
 % resample the time series
@@ -192,10 +192,10 @@ for n=1:n_step:N
     [x, P] = kf_update(x, z, P, H, R);
     
     % Transform system based on Kalman Filtered data
-    roll   =  degtorad(x(1));
-    pitch  = -degtorad(x(2));
-    yaw    = -degtorad(x(3));
-    rotation = affine_rotation_x(roll) * affine_rotation_y(pitch) * affine_rotation_z(yaw);
+    yaw    =  degtorad(x(1));
+    pitch  =  degtorad(x(2));
+    roll   =  degtorad(x(3));
+    rotation = affine_rotation_z(yaw) * affine_rotation_y(pitch) * affine_rotation_x(roll);
     
     % Extract DCM
     DCM = rotation(1:3, 1:3);
