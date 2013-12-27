@@ -40,9 +40,9 @@ vg(1) = 1; % 100*compass.UserData.variance(1);
 vg(2) = 1; % 100*compass.UserData.variance(2);
 vg(3) = 1; % 100*compass.UserData.variance(3);
 
-P = [1 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % ax -- a and m are correlated through RPY
-     0 1 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % ay
-     0 0 1, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % az
+P = [2 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % ax -- a and m are correlated through RPY
+     0 2 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % ay
+     0 0 2, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % az
      0 0 0, 1 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % mx
      0 0 0, 0 1 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % my
      0 0 0, 0 0 1, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % mz
@@ -111,13 +111,13 @@ H = [1 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0;
 
 % values taken from cov of diffs of ypr2/ypr_gyro and ypr_kf due to lack of
 % better reference
-R = [10 0 0, 0 0 0, 0 0 0, 1 1 1, 0 0 0; % ax
-     0 10 0, 0 0 0, 0 0 0, 1 1 1, 0 0 0; % ay
-     0 0 10, 0 0 0, 0 0 0, 1 1 1, 0 0 0; % az
+R = [10 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % ax
+     0 10 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % ay
+     0 0 10, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % az
      
-     0 0 0, 10 0 0, 0 0 0, 1 1 1, 0 0 0; % mx
-     0 0 0, 0 10 0, 0 0 0, 1 1 1, 0 0 0; % my
-     0 0 0, 0 0 10, 0 0 0, 1 1 1, 0 0 0; % mz
+     0 0 0, 10 0 0, 0 0 0, 0 0 0, 0 0 0; % mx
+     0 0 0, 0 10 0, 0 0 0, 0 0 0, 0 0 0; % my
+     0 0 0, 0 0 10, 0 0 0, 0 0 0, 0 0 0; % mz
      
      0 0 0, 0 0 0, 10.087 0 0,        0.1   -0.67  1.24,      0 0 0; % roll
      0 0 0, 0 0 0, 0 6.1297 0,        -.18 -.065 0.43,        0 0 0; % pitch
@@ -144,7 +144,7 @@ ypr_kf = zeros(N, 3);
 ypr_gyro = zeros(N, 3);
 omega_kf = zeros(N, 3);
 
-oldDCM = zeros(3);
+oldDCM = eye(3);
 
 for i=1:N
     % fetch RPY from accelerometer and magnetometer
@@ -196,12 +196,13 @@ for i=1:N
     end
     
      % state matrix
-    A = [1 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % ax  -- since r/p/y are already known, angular velocity could be used to formulate expectation
-         0 1 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % ay
-         0 0 1, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % az
-         0 0 0, 1 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % mx
-         0 0 0, 0 1 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % my
-         0 0 0, 0 0 1, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % mz
+    t = difference;
+    A = [t(1,1) t(1,2) t(1,3), 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % ax  -- since r/p/y are already known, angular velocity could be used to formulate expectation
+         t(2,1) t(2,2) t(2,3), 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % ay
+         t(3,1) t(3,2) t(3,3), 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % az
+         0 0 0, t(1,1) t(1,2) t(1,3), 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % mx
+         0 0 0, t(2,1) t(2,2) t(2,3), 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % my
+         0 0 0, t(3,1) t(3,2) t(3,3), 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % mz
          0 0 0, 0 0 0, 1 0 0, 0 0 0, T 0 0, 0.5*T^2 0 0, 0 0 0; % roll (DCM int)
          0 0 0, 0 0 0, 0 1 0, 0 0 0, 0 T 0, 0 0.5*T^2 0, 0 0 0; % pitch (DCM int)
          0 0 0, 0 0 0, 0 0 1, 0 0 0, 0 0 T, 0 0 0.5*T^2, 0 0 0; % yaw (DCM int)
