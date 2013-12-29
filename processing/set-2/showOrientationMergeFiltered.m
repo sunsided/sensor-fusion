@@ -168,9 +168,11 @@ for i=1:N
         
         % ideally, we should correct the prediction using a and m above
         % before using it here
-        a = x(1:3);
-        m = x(4:6);
+        %a = x(1:3);
+        %m = x(4:6);
     end
+    
+    lol(i, :) = [x(1:3)' a x(4:6)' m];
     
     [yaw, pitch, roll, DCM, coordinateSystem, ~] = yawPitchRoll(a, m);
     ypr(i,:) = [yaw, pitch, roll];
@@ -281,7 +283,17 @@ for i=1:N
 end
 close(hwb);
 
-% clamp angles to -180..180
+%% Display Kalman Filtered data
+figure;
+plot(lol(:,1:6))
+title('Kalman filtered accelerometer');
+legend('kf_x', 'kf_y', 'kf_z', 'x', 'y', 'z');
+figure
+plot(lol(:,7:end))
+title('Kalman filtered magnetometer');
+legend('kf_x', 'kf_y', 'kf_z', 'x', 'y', 'z');
+
+%% clamp angles to -180..180
 hwb = waitbar(0, 'Correcting angles ...');
 ypr2 = clampangle(ypr2);
 waitbar(1/3, hwb);
