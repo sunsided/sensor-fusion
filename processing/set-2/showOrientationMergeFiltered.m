@@ -40,10 +40,10 @@ vg(1) = 1; % 100*compass.UserData.variance(1);
 vg(2) = 1; % 100*compass.UserData.variance(2);
 vg(3) = 1; % 100*compass.UserData.variance(3);
 
-P = [2 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % ax -- a and m are correlated through RPY
+P = [2 0 0, 1 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % ax -- a and m are correlated through RPY
      0 2 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % ay
      0 0 2, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % az
-     0 0 0, 1 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % mx
+     1 0 0, 1 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % mx
      0 0 0, 0 1 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % my
      0 0 0, 0 0 1, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % mz
      0 0 0, 0 0 0, 1.9 0 0, 1 0 0, 0 0 0, 0 0 0, 0 0 0;
@@ -153,6 +153,19 @@ for i=1:N
     
     % if a state prediction exists, use the prediction instead
     if i > 1
+        % Build Kalman Filter measurement vector from a and m
+        z_am = [a(1) a(2) a(3), m(1) m(2) m(3)]';
+        H_am = [1 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0;
+             0 1 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0;
+             0 0 1, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0;
+             0 0 0, 1 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0;
+             0 0 0, 0 1 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0;
+             0 0 0, 0 0 1, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0];
+        R_am = eye(6) * 10;
+        
+        % Update Kalman Filter from measurements
+        [x, P] = kf_update(x, z_am, P, H_am, R_am);
+        
         % ideally, we should correct the prediction using a and m above
         % before using it here
         a = x(1:3);
@@ -221,8 +234,10 @@ for i=1:N
     
     % Kalman Filter: Initial Prediction
     if i == 1
-        x(1:3) = [yaw pitch roll];
-        x(4:6) = [yaw pitch roll];
+        x(1:3) = [a(1) a(2) a(3)];
+        x(4:6) = [m(1) m(2) m(3)];
+        x(7:9) = [yaw pitch roll];
+        x(10:12) = [yaw pitch roll];
         [x, P] = kf_predict(x, A, P, lambda);
     end
      
@@ -267,9 +282,14 @@ end
 close(hwb);
 
 % clamp angles to -180..180
+hwb = waitbar(0, 'Correcting angles ...');
 ypr2 = clampangle(ypr2);
+waitbar(1/3, hwb);
 ypr_gyro = clampangle(ypr_gyro);
+waitbar(2/3, hwb);
 ypr_kf = clampangle(ypr_kf);
+waitbar(3/3, hwb);
+close(hwb);
 
 %% Plot data
 figureHandle = figure('Name', 'Raw and derived inertial sensor data', ...
