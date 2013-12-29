@@ -40,12 +40,12 @@ vg(1) = 1; % 100*compass.UserData.variance(1);
 vg(2) = 1; % 100*compass.UserData.variance(2);
 vg(3) = 1; % 100*compass.UserData.variance(3);
 
-P = [2 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % ax -- a and m are correlated through RPY
-     0 2 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % ay
-     0 0 2, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % az
-     0 0 0, 1 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % mx
-     0 0 0, 0 1 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % my
-     0 0 0, 0 0 1, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % mz
+P = [2 0 0, 1 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % ax -- a and m are correlated through RPY
+     0 2 0, 0 1 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % ay
+     0 0 2, 0 0 1, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % az
+     1 0 0, 1 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % mx
+     0 1 0, 0 1 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % my
+     0 0 1, 0 0 1, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % mz
      0 0 0, 0 0 0, 1.9 0 0, 1 0 0, 0 0 0, 0 0 0, 0 0 0;
      0 0 0, 0 0 0, 0 1.9 0, 0 1 0, 0 0 0, 0 0 0, 0 0 0;
      0 0 0, 0 0 0, 0 0 1.9, 0 0 1, 0 0 0, 0 0 0, 0 0 0;
@@ -61,9 +61,6 @@ P = [2 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0; % ax -- a and m are correl
      0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 1 0 0;
      0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 1 0;
      0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 1];
-
-P_mask = P;
-P_mask(P ~= 0) = 1;
  
 % state matrix
 T = 0.1;
@@ -158,13 +155,13 @@ for i=1:N
         % Update Kalman Filter from measurements
         [x, P] = kf_update(x, z_am, P, H_am, R_am);
         
-        % ideally, we should correct the prediction using a and m above
-        % before using it here
-        %a = x(1:3);
-        %m = x(4:6);
+        lol(i, :) = [x(1:3)' a x(4:6)' m];
+        
+        a = x(1:3);
+        m = x(4:6);
+    else
+        lol(i, :) = [x(1:3)' a x(4:6)' m];
     end
-    
-    lol(i, :) = [x(1:3)' a x(4:6)' m];
     
     [yaw, pitch, roll, DCM, coordinateSystem, ~] = yawPitchRoll(a, m);
     ypr(i,:) = [yaw, pitch, roll];
