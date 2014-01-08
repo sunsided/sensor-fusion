@@ -96,12 +96,12 @@ H = [1 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0;
 R = [15 0 0,     2 0 0, 2 0 0, 0 0 0;
      0 15 0,    0 2 0, 0 2 0, 0 0 0;
      0 0 15,     0 0 2, 0 0 2, 0 0 0;
-     2 0 0,      10.087 0 0,        0.1   -0.67  1.24,      0 0 0;
-     0 2 0,      0 6.1297 0,        -.18 -.065 0.43,        0 0 0;
-     0 0 2,       0 0 8.8969,        -.26 -.05  -.02,        0 0 0;
-     2 0 0,      .1 -.18 -.26,      3.7462 0 0,            0 0 0;
-     0 2 0, 	-0.67 -.065 -.05,  0 3.365 0,             0 0 0;
-     0 0 2,      1.24 .43 -.02,     0 0 3.9315,            0 0 0;
+     2 0 0,      10.087 0 0,        0.1   0.67  1.24,      0 0 0;
+     0 2 0,      0 6.1297 0,         .18  .065 0.43,        0 0 0;
+     0 0 2,       0 0 8.8969,        .26 .05  .02,        0 0 0;
+     2 0 0,      .1 .18 .26,      3.7462 0 0,            0 0 0;
+     0 2 0, 	 0.67 .065 .05,  0 3.365 0,             0 0 0;
+     0 0 2,      1.24 .43 .02,     0 0 3.9315,            0 0 0;
      0 0 0,       0 0 0,             0 0 0,                  1 0 0;
      0 0 0,     0 0 0,             0 0 0,                  0 1 0;
      0 0 0,     0 0 0,             0 0 0,                  0 0 1];
@@ -120,6 +120,20 @@ ypr_gyro = zeros(N, 3);
 omega_kf = zeros(N, 3);
 
 oldDCM = zeros(3);
+
+maxx = -Inf;
+maxP = -Inf;
+maxA = -Inf;
+maxz = -Inf;
+maxH = -Inf;
+maxR = -Inf;
+
+minx = +Inf;
+minP = +Inf;
+minA = +Inf;
+minz = +Inf;
+minH = +Inf;
+minR = +Inf;
 
 for i=1:N
     % fetch RPY from accelerometer and magnetometer
@@ -188,7 +202,7 @@ for i=1:N
         x(7:9) = [yaw pitch roll];
         [x, P] = kf_predict(x, A, P, lambda);
     end
-     
+         
     % measurement transformation matrix
     H = [1 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0;
          0 1 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0, 0 0 0;
@@ -209,6 +223,16 @@ for i=1:N
          ypr_gyro(i, 1) ypr_gyro(i, 2) ypr_gyro(i, 3), ...
          ypr_gyro_current(1) ypr_gyro_current(2) ypr_gyro_current(3)]';
     
+    maxx = max(max(x), maxx);
+    maxA = max(max(max(A)), maxA);
+    maxP = max(max(max(P)), maxP);
+    maxz = max(max(z), maxz);
+     
+    minx = min(min(x), minx);
+    minA = min(min(min(A)), minA);
+    minP = min(min(min(P)), minP);
+    minz = min(min(z), minz);
+    
     % Select measurement noise for raw DCM angles 
     % according to pitch angle
     ap = abs(pitch);
@@ -225,6 +249,16 @@ for i=1:N
      
     % Kalman Filter: Measurement Update
     [x, P] = kf_update(x, z, P, H, R);
+    
+    maxx = max(max(x), maxx);
+    maxP = max(max(max(P)), maxP);
+    maxH = max(max(max(H)), maxH);
+    maxR = max(max(max(R)), maxR);
+    
+    minx = min(min(x), minx);
+    minP = min(min(min(P)), minP);
+    minH = min(min(min(H)), minH);
+    minR = min(min(min(R)), minR);
     
     % Cancel out covariances known to not exist
     %P = P .* P_mask;
@@ -243,6 +277,15 @@ close(hwb);
 ypr2 = clampangle(ypr2);
 ypr_gyro = clampangle(ypr_gyro);
 ypr_kf = clampangle(ypr_kf);
+
+% Stats
+fprintf('\nSimple statistics\n');
+fprintf('x range: %f .. %f\n', minx, maxx);
+fprintf('z range: %f .. %f\n', minz, maxz);
+fprintf('A range: %f .. %f\n', minA, maxA);
+fprintf('P range: %f .. %f\n', minP, maxP);
+fprintf('H range: %f .. %f\n', minH, maxH);
+fprintf('R range: %f .. %f\n', minR, maxR);
 
 %% Plot data
 figureHandle = figure('Name', 'Raw and derived inertial sensor data', ...
