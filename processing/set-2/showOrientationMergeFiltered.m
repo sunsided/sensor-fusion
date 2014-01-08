@@ -263,6 +263,22 @@ fprintf('P range: %f .. %f\n', minP, maxP);
 fprintf('H range: %f .. %f\n', minH, maxH);
 fprintf('R range: %f .. %f\n', minR, maxR);
 
+%{
+x range: -209.968656 .. 214.802285
+z range: -179.832503 .. 179.699638
+A range: 0.000000 .. 1.000000
+P range: -2.217640 .. 3.373620
+H range: 0.000000 .. 1.000000
+R range: 0.000000 .. 189.996904
+
+x range: -283.402185 .. 721.907373
+z range: -125.421459 .. 732.398431
+A range: 0.000000 .. 1.000000
+P range: -91.204589 .. 129.724623
+H range: 0.000000 .. 1.000000
+R range: 0.000000 .. 10.087000
+%}
+
 %% Plot data
 figureHandle = figure('Name', 'Raw and derived inertial sensor data', ...
     'NumberTitle', 'off', ...
