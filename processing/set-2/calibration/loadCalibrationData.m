@@ -1,6 +1,8 @@
 function [accelerometer, gyroscope, magnetometer] =  loadCalibrationData
 % loadCalibrationData Loads sensor calibration data and populates global variables with the data to be used by the calibration functions.
 
+    path(fullfile(fileparts(which(mfilename)), '..'), path);
+
     % Load magnetometer data
     global compassCalibrationData
     if ~exist('compassCalibrationData', 'var') || isempty(compassCalibrationData)
