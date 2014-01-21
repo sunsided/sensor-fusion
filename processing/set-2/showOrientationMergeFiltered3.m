@@ -53,10 +53,11 @@ t = 0.001;
 s = 0.002;
 m = 0.01;
 
+% too large values in Q yield bad results
 Q = [
-     5  0  0    0  0  0     0  0  0;
-     0  5  0    0  0  0     0  0  0;
-     0  0  5    0  0  0     0  0  0;
+     m  0  0    0  0  0     0  0  0;
+     0  m  0    0  0  0     0  0  0;
+     0  0  m    0  0  0     0  0  0;
 
      0  0  0  gv(1) 0 0     0  0  0;
      0  0  0    0 gv(2) 0   0  0  0;
@@ -140,7 +141,12 @@ for i=1:N
     end
     %}
     
-    if abs(pitch) > 0
+    % Axis R base value
+    RA = 5;
+    SwitchThreshold = 0;
+    SwitchScale = 10;
+    
+    if abs(pitch) >= SwitchThreshold
 
         % measurement transformation matrix
         H = [
@@ -151,7 +157,7 @@ for i=1:N
 
         % measurement noise matrix
         R = [
-           10   0   0   0;
+           RA   0   0   0;
             0   0.013982   0   0;
             0   0   0.0071912  0;
             0   0   0   0.01041];
@@ -163,7 +169,6 @@ for i=1:N
              ypr_gyro_current(1);
              ypr_gyro_current(2);
              ypr_gyro_current(3)];
-
     else
         
         % measurement transformation matrix
@@ -175,14 +180,14 @@ for i=1:N
              0 0 0 0 1 0 0 0 0;
              0 0 0 0 0 1 0 0 0];
 
-        s = (abs(pitch)/50)^2 * 50 + 10;
-        c = (abs(pitch)/50)^2 * 50;
+        s = (abs(pitch)/SwitchThreshold)^2 * SwitchScale + RA;
+        c = (abs(pitch)/SwitchThreshold)^2 * SwitchScale;
          
         % measurement noise matrix
         R = [
-            s   0   c   0   0   0;
-            0  10   0   0   0   0;
-            c   0   s   0   0   0;
+            s   0   0   0   0   0;
+            0  RA   0   0   0   0;
+            0   0   s   0   0   0;
             0   0   0   0.013982   0   0;
             0   0   0   0   0.0071912  0;
             0   0   0   0   0   0.01041];
@@ -195,7 +200,7 @@ for i=1:N
              ypr_gyro_current(1);
              ypr_gyro_current(2);
              ypr_gyro_current(3)];        
-        
+     
     end
     
     % Kalman Filter: Measurement Update
