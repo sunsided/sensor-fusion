@@ -76,7 +76,6 @@ omega_kf = zeros(N, 3);
 
 oldDCM = zeros(3);
 ypr_base = [0 0 0];
-previous_ypr = [0 0 0];
 
 for i=1:N
     % fetch RPY from accelerometer and magnetometer
@@ -116,46 +115,14 @@ for i=1:N
          0 0 0    0 0 0     0 0 1];
     
     % Kalman Filter: Initial Prediction
-    if i == 1
-        previous_ypr = current_ypr;
-        
+    if i == 1       
         x(1) = yaw;       
         x(2) = pitch;
         x(3) = roll;
-
-        [x, P] = kf_predict(x, A, P, lambda, Q);
     end
       
-    % glitch correction
-    %{
-    for axis = 1:3
-        diff = current_ypr(axis) - previous_ypr(axis);
-        if diff < -100
-            current_ypr(axis) = current_ypr(axis) + 360;
-        end
-        
-        diff = current_ypr(axis) - previous_ypr(axis);
-        if diff > 100
-            current_ypr(axis) = current_ypr(axis) - 360;
-        end
-    end
-    %}
-    
-    previous_ypr = current_ypr;
-    
-    %{
-    for axis = 1:3
-        if x(axis) > 180
-            x(axis) = x(axis) - 360;
-        elseif x(axis) < -180
-            x(axis) = x(axis) + 360;
-        end
-    end    
-    
-    if gyroscope.Time(i) > 17.97
-        1;
-    end
-    %}
+    % Kalman Filter: Predict
+    [x, P] = kf_predict(x, A, P, lambda, Q);
     
     % Axis R base value
     RA = 1;
@@ -207,7 +174,7 @@ for i=1:N
             0   0   0   gv(1)   0   0;
             0   0   0   0   gv(2)  0;
             0   0   0   0   0   gv(3)];
-        
+
         % Measurement vector
         z = [
              yaw;
@@ -218,28 +185,14 @@ for i=1:N
              ypr_gyro_current(3)];        
      
     end
-    
+
     % Kalman Filter: Measurement Update
     [x, P] = kf_update(x, z, P, H, R);
-    
-    % correct axes
-    %{
-    for axis = 1:3
-        if x(axis) > 180
-            x(axis) = x(axis) - 360;
-        elseif x(axis) < -180
-            x(axis) = x(axis) + 360;
-        end
-    end
-    %}
-    
+       
     % store state
     ypr_kf(i, :)    = [x(1)  x(2)  x(3)];
     omega_kf(i, :)  = [x(4), x(5), x(6)];
-    
-    % Kalman Filter: Predict
-    [x, P] = kf_predict(x, A, P, lambda, Q);
-        
+     
     waitbar(i/N, hwb);
 end
 close(hwb);
