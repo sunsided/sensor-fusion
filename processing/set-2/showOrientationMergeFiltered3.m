@@ -43,9 +43,9 @@ P = [
      0  0  0    0 gv(2) 0   0  0  0;
      0  0  0    0  0 gv(3)  0  0  0;
 
-     0  0  0    0  0  0     1  0  0;
-     0  0  0    0  0  0     0  1  0;
-     0  0  0    0  0  0     0  0  1];
+     0  0  0    0  0  0    .1  0  0;
+     0  0  0    0  0  0     0 .1  0;
+     0  0  0    0  0  0     0  0 .1];
 
 B = eye(size(P));
 
@@ -59,16 +59,16 @@ Q = [
      0  m  0    0  0  0     0  0  0;
      0  0  m    0  0  0     0  0  0;
 
-     0  0  0  gv(1) 0 0     0  0  0;
-     0  0  0    0 gv(2) 0   0  0  0;
-     0  0  0    0  0  gv(3) 0  0  0;
+     0  0  0    t  0  0     0  0  0;
+     0  0  0    0  t  0     0  0  0;
+     0  0  0    0  0  t     0  0  0;
 
      0  0  0    0  0  0     s  0  0;
      0  0  0    0  0  0     0  s  0;
      0  0  0    0  0  0     0  0  s];
    
 % Lambda coefficient for artificial increase of covariance
-lambda = .99;
+lambda = .98;
 
 %% Get roll, pitch and yaw
 hwb = waitbar(0, 'Calculating states ...');
@@ -142,11 +142,11 @@ for i=1:N
     %}
     
     % Axis R base value
-    RA = 5;
+    RA = 1;
     SwitchThreshold = 0;
-    SwitchScale = 10;
+    SwitchScale = 1;
     
-    if abs(pitch) >= SwitchThreshold
+    if abs(pitch) >= SwitchThreshold || abs(ypr_gyro_current(2)) >= SwitchThreshold
 
         % measurement transformation matrix
         H = [
@@ -158,9 +158,9 @@ for i=1:N
         % measurement noise matrix
         R = [
            RA   0   0   0;
-            0   0.013982   0   0;
-            0   0   0.0071912  0;
-            0   0   0   0.01041];
+            0   gv(1)   0   0;
+            0   0   gv(2)  0;
+            0   0   0   gv(3)];
 
 
         % Measurement vector
@@ -188,9 +188,9 @@ for i=1:N
             s   0   0   0   0   0;
             0  RA   0   0   0   0;
             0   0   s   0   0   0;
-            0   0   0   0.013982   0   0;
-            0   0   0   0   0.0071912  0;
-            0   0   0   0   0   0.01041];
+            0   0   0   gv(1)   0   0;
+            0   0   0   0   gv(2)  0;
+            0   0   0   0   0   gv(3)];
         
         % Measurement vector
         z = [
