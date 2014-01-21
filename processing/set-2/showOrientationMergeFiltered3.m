@@ -1,14 +1,9 @@
-%
-% This approach estimates states and biases independently 
-% for each axis.
-%
-
 clear all; home;
 
 %% Load the data
-%dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'roll-and-tilt-at-45-90');
+dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'roll-and-tilt-at-45-90');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'unmoved-with-x-pointing-forward');
-dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-forward');
+%dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-forward');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-y-pointing-left');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-up');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-z-pointing-up');
@@ -68,7 +63,7 @@ Q = [
      0  0  0    0  0  0     0  0  s];
    
 % Lambda coefficient for artificial increase of covariance
-lambda = .98;
+lambda = .95;
 
 %% Get roll, pitch and yaw
 hwb = waitbar(0, 'Calculating states ...');
@@ -80,6 +75,8 @@ ypr_gyro = zeros(N, 3);
 omega_kf = zeros(N, 3);
 
 oldDCM = zeros(3);
+ypr_base = [0 0 0];
+previous_ypr = [0 0 0];
 
 for i=1:N
     % fetch RPY from accelerometer and magnetometer
@@ -120,13 +117,32 @@ for i=1:N
     
     % Kalman Filter: Initial Prediction
     if i == 1
+        previous_ypr = current_ypr;
+        
         x(1) = yaw;       
         x(2) = pitch;
         x(3) = roll;
 
         [x, P] = kf_predict(x, A, P, lambda, Q);
     end
+      
+    % glitch correction
+    %{
+    for axis = 1:3
+        diff = current_ypr(axis) - previous_ypr(axis);
+        if diff < -100
+            current_ypr(axis) = current_ypr(axis) + 360;
+        end
         
+        diff = current_ypr(axis) - previous_ypr(axis);
+        if diff > 100
+            current_ypr(axis) = current_ypr(axis) - 360;
+        end
+    end
+    %}
+    
+    previous_ypr = current_ypr;
+    
     %{
     for axis = 1:3
         if x(axis) > 180
@@ -143,10 +159,10 @@ for i=1:N
     
     % Axis R base value
     RA = 1;
-    SwitchThreshold = 0;
+    SwitchThreshold = 15;
     SwitchScale = 1;
     
-    if abs(pitch) >= SwitchThreshold || abs(ypr_gyro_current(2)) >= SwitchThreshold
+    if abs(pitch) > SwitchThreshold
 
         % measurement transformation matrix
         H = [
@@ -180,8 +196,8 @@ for i=1:N
              0 0 0 0 1 0 0 0 0;
              0 0 0 0 0 1 0 0 0];
 
-        s = (abs(pitch)/SwitchThreshold)^2 * SwitchScale + RA;
-        c = (abs(pitch)/SwitchThreshold)^2 * SwitchScale;
+        s = ((abs(pitch)+1)/(SwitchThreshold+1))^2 * SwitchScale + RA;
+        c = ((abs(pitch)+1)/(SwitchThreshold+1))^2 * SwitchScale;
          
         % measurement noise matrix
         R = [
@@ -207,6 +223,7 @@ for i=1:N
     [x, P] = kf_update(x, z, P, H, R);
     
     % correct axes
+    %{
     for axis = 1:3
         if x(axis) > 180
             x(axis) = x(axis) - 360;
@@ -214,6 +231,7 @@ for i=1:N
             x(axis) = x(axis) + 360;
         end
     end
+    %}
     
     % store state
     ypr_kf(i, :)    = [x(1)  x(2)  x(3)];
