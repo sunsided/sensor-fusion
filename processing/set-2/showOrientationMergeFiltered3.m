@@ -59,9 +59,9 @@ s = 0.002;
 m = 0.01;
 
 Q = [
-     m  t  s    0  0  0     0  0  0;
-     t  m  t    0  0  0     0  0  0;
-     s  t  m    0  0  0     0  0  0;
+     m  0  t    0  0  0     0  0  0;
+     0  m  0    0  0  0     0  0  0;
+     t  0  m    0  0  0     0  0  0;
 
      0  0  0    t  0  0     0  0  0;
      0  0  0    0  t  0     0  0  0;
@@ -70,15 +70,6 @@ Q = [
      0  0  0    0  0  0     s  0  0;
      0  0  0    0  0  0     0  s  0;
      0  0  0    0  0  0     0  0  s];
-   
-% measurement noise matrix
-R = [
-   .5   0   0   0   0;
-    0   10  0   0   0;
-    0   0   0.013982   0   0;
-    0   0   0   0.0071912  0;
-    0   0   0   0   0.01041];
-
    
 % Lambda coefficient for artificial increase of covariance
 lambda = 1;
@@ -110,6 +101,7 @@ for i=1:N
     if i > 1
         T = gyroscope.Time(i) - gyroscope.Time(i-1);
         ypr_gyro_current = [gyroscope.Data(i, 3) -gyroscope.Data(i, 2) -gyroscope.Data(i, 1)];
+        ypr_gyro(i, :) = ypr_gyro(i-1, :) + ypr_gyro_current * T;
     end
     
     % as for IDDCM ... Euler rates are not body rates.
@@ -138,33 +130,65 @@ for i=1:N
 
         [x, P] = kf_predict(x, A, P, lambda, Q);
     end
+        
+    if abs(pitch) > 45
+
+        % measurement transformation matrix
+        H = [
+             0 1 0 0 0 0 0 0 0;
+             0 0 0 1 0 0 0 0 0;
+             0 0 0 0 1 0 0 0 0;
+             0 0 0 0 0 1 0 0 0];
+
+        % measurement noise matrix
+        R = [
+           10   0   0   0;
+            0   0.013982   0   0;
+            0   0   0.0071912  0;
+            0   0   0   0.01041];
+
+
+        % Measurement vector
+        z = [
+             pitch;
+             ypr_gyro_current(1);
+             ypr_gyro_current(2);
+             ypr_gyro_current(3)];
+
+    else
+        
+        % measurement transformation matrix
+        H = [
+             1 0 0 0 0 0 0 0 0;
+             0 1 0 0 0 0 0 0 0;
+             0 0 1 0 0 0 0 0 0;
+             0 0 0 1 0 0 0 0 0;
+             0 0 0 0 1 0 0 0 0;
+             0 0 0 0 0 1 0 0 0];
+
+        s = (abs(pitch)/50)^2 * 50 + 20;
          
-    % measurement transformation matrix
-    H = [
-         0 1 0 0 0 0 0 0 0;
-         1 0 1 0 0 0 0 0 0;
-         0 0 0 1 0 0 0 0 0;
-         0 0 0 0 1 0 0 0 0;
-         0 0 0 0 0 1 0 0 0];
-         
-    % Set observation covariances
-    R(2, 2) = (abs(current_ypr(2))/90)^2 * 100 + 10;
-    
-    yr = current_ypr(1) + current_ypr(3);
-    if yr >= 180
-        yr = yr - 360;
-    elseif yr <= -180
-        yr = yr + 360;
+        % measurement noise matrix
+        R = [
+            s   0   0   0   0   0;
+            0  10   0   0   0   0;
+            0   0   s   0   0   0;
+            0   0   0   0.013982   0   0;
+            0   0   0   0   0.0071912  0;
+            0   0   0   0   0   0.01041];
+
+
+        % Measurement vector
+        z = [
+             yaw;
+             pitch;
+             roll;
+             ypr_gyro_current(1);
+             ypr_gyro_current(2);
+             ypr_gyro_current(3)];        
+        
     end
-    
-    % Measurement vector
-    z = [
-         current_ypr(2);                    % pitch
-         yr;                                % yaw + roll
-         ypr_gyro_current(1);
-         ypr_gyro_current(2);
-         ypr_gyro_current(3)];
-    
+     
     % Kalman Filter: Measurement Update
     [x, P] = kf_update(x, z, P, H, R);
     
@@ -225,14 +249,6 @@ line(t, roll, ...
     'MarkerSize', 2, ...
     'Color', lineColor(4, :) ...
     ); 
-roll = ypr2(:, 3);
-line(t, roll, ...
-    'Parent', axisRpy(1), ...
-    'LineStyle', 'none', ...
-    'Marker', '.', ...
-    'MarkerSize', 2, ...
-    'Color', [1 1 1] ...
-    ); 
 
 xlim([0 t(end)]);
 ylim([-180 180]);
@@ -242,7 +258,7 @@ title('Roll', ...
     );
 ylabel('angle [\circ]');
 xlabel('t [s]');
-legendHandle = legend('DCM raw', 'DCM int');
+legendHandle = legend('DCM raw');
 set(legendHandle, 'TextColor', [1 1 1]);
 
 %% Pitch
@@ -319,6 +335,15 @@ axisRpy(4) = subplot(3, 3, 2, ...
     );
 
 t = time;
+roll = ypr_gyro(:, 3);
+line(t, roll, ...
+    'Parent', axisRpy(4), ...
+    'LineStyle', 'none', ...
+    'Marker', '.', ...
+    'MarkerSize', 2, ...
+    'Color', lineColor(4, :) ...
+    );  
+hold on;
 roll = ypr_kf(:, 3);
 line(t, roll, ...
     'Parent', axisRpy(4), ...
@@ -336,7 +361,7 @@ title('Roll', ...
     );
 ylabel('angle [\circ]');
 xlabel('t [s]');
-legendHandle = legend('kf');
+legendHandle = legend('gyro int', 'kf');
 set(legendHandle, 'TextColor', [1 1 1]);
 
 %% Pitch
@@ -350,6 +375,15 @@ axisRpy(5) = subplot(3, 3, 5, ...
     );
 
 t = time;
+pitch = ypr_gyro(:, 2);
+line(t, pitch, ...
+    'Parent', axisRpy(5), ...
+    'LineStyle', 'none', ...
+    'Marker', '.', ...
+    'MarkerSize', 2, ...
+    'Color', lineColor(5, :) ...
+    ); 
+hold on;
 pitch = ypr_kf(:, 2);
 line(t, pitch, ...
     'Parent', axisRpy(5), ...
@@ -367,7 +401,7 @@ title('Pitch (elevation)', ...
     );
 ylabel('angle [\circ]');
 xlabel('t [s]');
-legendHandle = legend('kf');
+legendHandle = legend('gyro int', 'kf');
 set(legendHandle, 'TextColor', [1 1 1]);
 
 %% Yaw
@@ -381,6 +415,15 @@ axisRpy(6) = subplot(3, 3, 8, ...
     );
 
 t = time;
+yaw = ypr_gyro(:, 1);
+line(t, yaw, ...
+    'Parent', axisRpy(6), ...
+    'LineStyle', 'none', ...
+    'Marker', '.', ...
+    'MarkerSize', 2, ...
+    'Color', lineColor(6, :) ...
+    ); 
+hold on;
 yaw = ypr_kf(:, 1);
 line(t, yaw, ...
     'Parent', axisRpy(6), ...
@@ -398,8 +441,9 @@ title('Yaw (azimuth, heading)', ...
     );
 ylabel('angle [\circ]');
 xlabel('t [s]');
-legendHandle = legend('kf');
+legendHandle = legend('gyro int', 'kf');
 set(legendHandle, 'TextColor', [1 1 1]);
+
 
 
 %% Roll
