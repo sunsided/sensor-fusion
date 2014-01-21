@@ -34,43 +34,51 @@ time = time(1:N);
 % ddcm bias
 
 % state matrix
-xr = [0 0 0, -0.013317  -6.4988e-06]';
-xp = [0 0 0, -0.0026933 0.00043921]';
-xy = [0 0 0,  0.0021566 -1.1479e-05]';
+x = [0 0 0, ... % angles
+     0 0 0, ... % angular velocities
+     0 0 0]';   % angular accelerations
 
 % state covariance matrix
 P = [
-     1.9   0   0   0   0;
-       0   5   0   0   0;
-       0   0   5   0   0;
-       0   0   0   5   0;   % ddcm bias
-       0   0   0   0   5];  % gyro bias
-    
-Py = P;
-Pp = P;
-Pr = P;
+     5  0  0    0  0  0     0  0  0;
+     0  5  0    0  0  0     0  0  0;
+     0  0  5    0  0  0     0  0  0;
+
+     0  0  0   .1  0  0     0  0  0;
+     0  0  0    0 .1  0     0  0  0;
+     0  0  0    0  0 .1     0  0  0;
+
+     0  0  0    0  0  0     1  0  0;
+     0  0  0    0  0  0     0  1  0;
+     0  0  0    0  0  0     0  0  1];
 
 B = eye(size(P));
 
+t = 0.001;
+s = 0.002;
+m = 0.01;
+
 Q = [
-     0.5   0   0      0     0;
-       0   0.21938 0  0     0;
-       0   0   0.1    0     0;
-       0   0   0     0.01  0;
-       0   0   0     0     0.01];   
+     m  t  s    0  0  0     0  0  0;
+     t  m  t    0  0  0     0  0  0;
+     s  t  m    0  0  0     0  0  0;
+
+     0  0  0    t  0  0     0  0  0;
+     0  0  0    0  t  0     0  0  0;
+     0  0  0    0  0  t     0  0  0;
+
+     0  0  0    0  0  0     s  0  0;
+     0  0  0    0  0  0     0  s  0;
+     0  0  0    0  0  0     0  0  s];
    
 % measurement noise matrix
-Rr = [
-       0.20586   0;
-       0         0.013982];
- 
-Rp = [
-       0.20586   0;
-       0         0.0071912];
+R = [
+   .5   0   0   0   0;
+    0   10  0   0   0;
+    0   0   0.013982   0   0;
+    0   0   0   0.0071912  0;
+    0   0   0   0   0.01041];
 
-Ry = [
-       0.20586   0;
-       0         0.01041];
    
 % Lambda coefficient for artificial increase of covariance
 lambda = 1;
@@ -83,7 +91,6 @@ ypr2 = zeros(N, 3);
 ypr_kf = zeros(N, 3);
 ypr_gyro = zeros(N, 3);
 omega_kf = zeros(N, 3);
-omega_quat = zeros(N, 3);
 
 oldDCM = zeros(3);
 
@@ -93,133 +100,80 @@ for i=1:N
     m = compass.Data(i, :);
     
     [yaw, pitch, roll, DCM, coordinateSystem, ~] = yawPitchRoll(a, m);
-    ypr(i,:) = [yaw, pitch, roll];
     
-    % correct inverted DCM
-    DCM = DCM';
+    current_ypr = [yaw, pitch, roll];
+    ypr(i,:) = current_ypr;
     
     % get time derivative
     T = 0.1;
-    if i > 1
-        T = gyroscope.Time(i) - gyroscope.Time(i-1);
-    end
-    
-    % fetch RPY from integrated gyro
-    ypr_gyro(i, :) = [yaw, pitch, roll];
     ypr_gyro_current = [0 0 0];
     if i > 1
+        T = gyroscope.Time(i) - gyroscope.Time(i-1);
         ypr_gyro_current = [gyroscope.Data(i, 3) -gyroscope.Data(i, 2) -gyroscope.Data(i, 1)];
-        ypr_gyro_now = ypr_gyro(i-1, :) + ypr_gyro_current * T;
-        ypr_gyro(i, :) = ypr_gyro_now;
     end
-        
-    % calculate the difference of the rotation and hence the 
-    % angular velocity
-    difference = DCM*oldDCM';
-    om_pitchY   = -asind(difference(1, 3));
-    om_rollX    = atan2d(difference(2, 3), difference(3, 3));
-    om_yawZ     = atan2d(difference(1, 2), difference(1, 1));
-
-    %{
-    om_pitchY = om_pitchY / T;
-    om_rollX = om_rollX / T;
-    om_yawZ = om_yawZ / T;
-    %}
     
-    % integrate the angular velocity
-    old_ypr2 = [yaw pitch roll]; % ypr(i, :);
-    if i > 1
-        old_ypr2 = ypr2(i-1, :);
-    end
-    ypr2_now = old_ypr2 + [om_yawZ, om_pitchY, om_rollX];
-    ypr2(i, :) = ypr2_now;
-        
-    % build quaternion
-    % http://www.cg.info.hiroshima-cu.ac.jp/~miyazaki/knowledge/teche52.html
-    qcurrent = quatFromDCM(DCM);  
-    qprevious = quatFromDCM(oldDCM);
-    
-    %{
-    qpt = quatTranspose(qprevious);
-    q = quatMultiply(qcurrent, qpt);
-    velocities = 2 * q(2:4) / norm(q(2:4)) * acosd(q(1));
-    %}
-    
-    % http://lost-found-wandering.blogspot.de/2011/04/angular-velocity-from-two-known.html
-    
-    % calculate the angle between both quaternions
-    theta = acos(quatScalar(qcurrent, qprevious));
-    
-    % calculate quaternion derivative
-    dq_dt = theta/sin(theta) * (qcurrent - cos(theta)*qprevious);
-    
-    % convert to angular velocities
-    velocities = 2/T * (quatMultiply(dq_dt, quatConj(qprevious)));
-    velocities = velocities(2:4) * 180/pi;
-    
-    
-    ypr_gyro_current, [om_yawZ, om_pitchY, om_rollX], velocities'*180/pi*T
-    
-    
-    ypr2(i, :) = old_ypr2 + velocities' * T;    % integrate
-    
-    omega_quat(i, :) = velocities';
-    
-    % save current DCM for next iteration
-    oldDCM = DCM;
+    % as for IDDCM ... Euler rates are not body rates.
     
     % Prepare Kalman Filter
     
     % state matrix
     A = [
-         1      T       0.5*T^2     0   0;
-         0      1       T           0   0;
-         0      0       1           0   0;
-         0      0       0           1   0;  % ddcm bias
-         0      0       0           0   1]; % gyro bias
+         1 0 0    T 0 0     0.5*T^2 0 0;
+         0 1 0    0 T 0     0 0.5*T^2 0;
+         0 0 1    0 0 T     0 0 0.5*T^2;
+         
+         0 0 0    1 0 0     T 0 0;
+         0 0 0    0 1 0     0 T 0;
+         0 0 0    0 0 1     0 0 T;
+         
+         0 0 0    0 0 0     1 0 0;
+         0 0 0    0 0 0     0 1 0;
+         0 0 0    0 0 0     0 0 1];
     
     % Kalman Filter: Initial Prediction
     if i == 1
-        xy(1) = yaw;       
-        xp(1) = pitch;
-        xr(1) = roll;
+        x(1) = yaw;       
+        x(2) = pitch;
+        x(3) = roll;
 
-        [xy, Py] = kf_predict(xy, A, Py, lambda, Q);
-        [xp, Pp] = kf_predict(xp, A, Pp, lambda, Q);
-        [xr, Pr] = kf_predict(xr, A, Pr, lambda, Q);
+        [x, P] = kf_predict(x, A, P, lambda, Q);
     end
          
     % measurement transformation matrix
     H = [
-         0 1 0, T 0;    % omega + ddcm bias
-         0 1 0, 0 T];   % omega + gyro bias
+         0 1 0 0 0 0 0 0 0;
+         1 0 1 0 0 0 0 0 0;
+         0 0 0 1 0 0 0 0 0;
+         0 0 0 0 1 0 0 0 0;
+         0 0 0 0 0 1 0 0 0];
          
-    % Measurement vector
-    zy = [
-         velocities(1), ...
-         ypr_gyro_current(1)]';
+    % Set observation covariances
+    R(2, 2) = (abs(current_ypr(2))/90)^2 * 100 + 10;
     
-    zp = [
-         velocities(2), ...
-         ypr_gyro_current(2)]';
-     
-    zr = [
-         velocities(3), ...
-         ypr_gyro_current(3)]';
-
+    yr = current_ypr(1) + current_ypr(3);
+    if yr >= 180
+        yr = yr - 360;
+    elseif yr <= -180
+        yr = yr + 360;
+    end
+    
+    % Measurement vector
+    z = [
+         current_ypr(2);                    % pitch
+         yr;                                % yaw + roll
+         ypr_gyro_current(1);
+         ypr_gyro_current(2);
+         ypr_gyro_current(3)];
+    
     % Kalman Filter: Measurement Update
-    [xy, Py] = kf_update(xy, zy, Py, H, Ry);
-    [xp, Pp] = kf_update(xp, zp, Pp, H, Rp);
-    [xr, Pr] = kf_update(xr, zr, Pr, H, Rr);
+    [x, P] = kf_update(x, z, P, H, R);
     
     % store state
-    ypr_kf(i, :)    = [xy(1)  xp(1)  xr(1)];
-    omega_kf(i, :)  = [xy(2), xp(2), xr(2)];
+    ypr_kf(i, :)    = [x(1)  x(2)  x(3)];
+    omega_kf(i, :)  = [x(4), x(5), x(6)];
     
     % Kalman Filter: Predict
-    [xy, Py] = kf_predict(xy, A, Py, lambda, Q);
-    [xp, Pp] = kf_predict(xp, A, Pp, lambda, Q);
-    [xr, Pr] = kf_predict(xr, A, Pr, lambda, Q);
+    [x, P] = kf_predict(x, A, P, lambda, Q);
     
     waitbar(i/N, hwb);
 end
@@ -310,14 +264,6 @@ line(t, pitch, ...
     'MarkerSize', 2, ...
     'Color', lineColor(5, :) ...
     ); 
-pitch = ypr2(:, 2);
-line(t, pitch, ...
-    'Parent', axisRpy(2), ...
-    'LineStyle', 'none', ...
-    'Marker', '.', ...
-    'MarkerSize', 2, ...
-    'Color', [1 1 1] ...
-    ); 
 
 xlim([0 t(end)]);
 ylim([-180 180]);
@@ -327,7 +273,7 @@ title('Pitch (elevation)', ...
     );
 ylabel('angle [\circ]');
 xlabel('t [s]');
-legendHandle = legend('DCM raw', 'DCM int');
+legendHandle = legend('DCM raw');
 set(legendHandle, 'TextColor', [1 1 1]);
 
 %% Yaw
@@ -349,14 +295,6 @@ line(t, yaw, ...
     'MarkerSize', 2, ...
     'Color', lineColor(6, :) ...
     ); 
-yaw = ypr2(:, 1);
-line(t, yaw, ...
-    'Parent', axisRpy(3), ...
-    'LineStyle', 'none', ...
-    'Marker', '.', ...
-    'MarkerSize', 2, ...
-    'Color', [1 1 1] ...
-    ); 
 
 xlim([0 t(end)]);
 ylim([-180 180]);
@@ -366,7 +304,7 @@ title('Yaw (azimuth, heading)', ...
     );
 ylabel('angle [\circ]');
 xlabel('t [s]');
-legendHandle = legend('DCM raw', 'DCM int');
+legendHandle = legend('DCM raw');
 set(legendHandle, 'TextColor', [1 1 1]);
 
 
@@ -381,15 +319,6 @@ axisRpy(4) = subplot(3, 3, 2, ...
     );
 
 t = time;
-roll = ypr_gyro(:, 3);
-line(t, roll, ...
-    'Parent', axisRpy(4), ...
-    'LineStyle', 'none', ...
-    'Marker', '.', ...
-    'MarkerSize', 2, ...
-    'Color', lineColor(4, :) ...
-    );  
-hold on;
 roll = ypr_kf(:, 3);
 line(t, roll, ...
     'Parent', axisRpy(4), ...
@@ -407,7 +336,7 @@ title('Roll', ...
     );
 ylabel('angle [\circ]');
 xlabel('t [s]');
-legendHandle = legend('gyro int', 'kf');
+legendHandle = legend('kf');
 set(legendHandle, 'TextColor', [1 1 1]);
 
 %% Pitch
@@ -421,15 +350,6 @@ axisRpy(5) = subplot(3, 3, 5, ...
     );
 
 t = time;
-pitch = ypr_gyro(:, 2);
-line(t, pitch, ...
-    'Parent', axisRpy(5), ...
-    'LineStyle', 'none', ...
-    'Marker', '.', ...
-    'MarkerSize', 2, ...
-    'Color', lineColor(5, :) ...
-    ); 
-hold on;
 pitch = ypr_kf(:, 2);
 line(t, pitch, ...
     'Parent', axisRpy(5), ...
@@ -447,7 +367,7 @@ title('Pitch (elevation)', ...
     );
 ylabel('angle [\circ]');
 xlabel('t [s]');
-legendHandle = legend('gyro int', 'kf');
+legendHandle = legend('kf');
 set(legendHandle, 'TextColor', [1 1 1]);
 
 %% Yaw
@@ -461,15 +381,6 @@ axisRpy(6) = subplot(3, 3, 8, ...
     );
 
 t = time;
-yaw = ypr_gyro(:, 1);
-line(t, yaw, ...
-    'Parent', axisRpy(6), ...
-    'LineStyle', 'none', ...
-    'Marker', '.', ...
-    'MarkerSize', 2, ...
-    'Color', lineColor(6, :) ...
-    ); 
-hold on;
 yaw = ypr_kf(:, 1);
 line(t, yaw, ...
     'Parent', axisRpy(6), ...
@@ -487,7 +398,7 @@ title('Yaw (azimuth, heading)', ...
     );
 ylabel('angle [\circ]');
 xlabel('t [s]');
-legendHandle = legend('gyro int', 'kf');
+legendHandle = legend('kf');
 set(legendHandle, 'TextColor', [1 1 1]);
 
 
