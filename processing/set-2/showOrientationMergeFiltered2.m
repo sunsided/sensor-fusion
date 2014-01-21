@@ -2,8 +2,9 @@ clear all; home;
 
 %% Load the data
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'roll-and-tilt-at-45-90');
+dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'unmoved-with-x-pointing-forward');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-forward');
-dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-y-pointing-left');
+%dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-y-pointing-left');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-up');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-z-pointing-up');
 [accelerometer, gyroscope, compass, ~] = loadData(dataSetFolder, true);
@@ -23,7 +24,7 @@ N = acceleration.Length;
 % alpha{phi, psi, theta}
 
 % state matrix
-x = [0 0 0, 0 0 0, 0 0 0]';
+x = [0 0 0, 0 0 0, 0 0 0, 0 0 0]';
 
 % state covariance matrix
 vg(1) = 2; % 100*compass.UserData.variance(1);
@@ -31,15 +32,18 @@ vg(2) = 2; % 100*compass.UserData.variance(2);
 vg(3) = 2; % 100*compass.UserData.variance(3);
 
 P = [
-     1.9 0 0, 0 0 0, 0 0 0;
-     0 1.9 0, 0 0 0, 0 0 0;
-     0 0 1.9, 0 0 0, 0 0 0;
-     0 0 0, vg(1) 0 0, 0 0 0;
-     0 0 0, 0 vg(2) 0, 0 0 0;
-     0 0 0, 0 0 vg(3), 0 0 0;
-     0 0 0, 0 0 0, 1 0 0;
-     0 0 0, 0 0 0, 0 1 0;
-     0 0 0, 0 0 0, 0 0 1];
+     1.9 0 0, 0 0 0, 0 0 0 0 0 0;
+     0 1.9 0, 0 0 0, 0 0 0 0 0 0;
+     0 0 1.9, 0 0 0, 0 0 0 0 0 0;
+     0 0 0, vg(1) 0 0, 0 0 0 0 0 0;
+     0 0 0, 0 vg(2) 0, 0 0 0 0 0 0;
+     0 0 0, 0 0 vg(3), 0 0 0 0 0 0;
+     0 0 0, 0 0 0, 1 0 0 0 0 0;
+     0 0 0, 0 0 0, 0 1 0 0 0 0;
+     0 0 0, 0 0 0, 0 0 1 0 0 0;
+     0 0 0, 0 0 0, 0 0 0 1 0 0;
+     0 0 0, 0 0 0, 0 0 0 0 1 0;
+     0 0 0, 0 0 0, 0 0 0 0 0 1];
  
 % measurement noise matrix
 R = [
@@ -65,6 +69,7 @@ ypr2 = zeros(N, 3);
 ypr_kf = zeros(N, 3);
 ypr_gyro = zeros(N, 3);
 omega_kf = zeros(N, 3);
+omega_ddcm = zeros(N, 3);
 
 oldDCM = zeros(3);
 
@@ -86,8 +91,12 @@ for i=1:N
     % fetch RPY from accelerometer and magnetometer
     a = acceleration.Data(i, :);
     m = compass.Data(i, :);
+    
     [yaw, pitch, roll, DCM, coordinateSystem, ~] = yawPitchRoll(a, m);
     ypr(i,:) = [yaw, pitch, roll];
+    
+    % correct inverted DCM
+    DCM = DCM';
     
     % fetch RPY from integrated gyro
     ypr_gyro(i, :) = [yaw, pitch, roll];
@@ -95,22 +104,26 @@ for i=1:N
     if i > 1
         ypr_gyro_current = [gyroscope.Data(i, 3) -gyroscope.Data(i, 2) -gyroscope.Data(i, 1)];
         dt = gyroscope.Time(i) - gyroscope.Time(i-1);
-        ypr_gyro(i, :) = ypr_gyro(i-1, :) + ypr_gyro_current * dt;
+        ypr_gyro_now = ypr_gyro(i-1, :) + ypr_gyro_current * dt;
+        ypr_gyro(i, :) = ypr_gyro_now;
     end
         
     % calculate the difference of the rotation and hence the 
     % angular velocity
-    difference = DCM'*oldDCM;   
+    difference = DCM*oldDCM';
     om_pitchY = -asind(difference(1, 3));
     om_rollX = atan2d(difference(2, 3), difference(3, 3));
     om_yawZ = atan2d(difference(1, 2), difference(1, 1));
+    
+    omega_ddcm(i, :) = [om_rollX, om_pitchY, om_yawZ];
     
     % integrate the angular velocity
     old_ypr2 = [yaw pitch roll]; % ypr(i, :);
     if i > 1
         old_ypr2 = ypr2(i-1, :);
     end
-    ypr2(i, :) = old_ypr2 + [om_yawZ, om_pitchY, om_rollX];
+    ypr2_now = old_ypr2 + [om_yawZ, om_pitchY, om_rollX];
+    ypr2(i, :) = ypr2_now;
         
     % save current DCM for next iteration
     diffDCM = difference;
@@ -119,39 +132,43 @@ for i=1:N
     % Prepare Kalman Filter
     T = 0.1;
     if i > 1
+        T = round(T*1E5)/1E5;
         T = gyroscope.Time(i) - gyroscope.Time(i-1);
     end
     
      % state matrix
     A = [
-         1 0 0, T 0 0, 0.5*T^2 0 0;
-         0 1 0, 0 T 0, 0 0.5*T^2 0;
-         0 0 1, 0 0 T, 0 0 0.5*T^2;
-         0 0 0, 1 0 0, T 0 0;
-         0 0 0, 0 1 0, 0 T 0;
-         0 0 0, 0 0 1, 0 0 T;
-         0 0 0, 0 0 0, 1 0 0;
-         0 0 0, 0 0 0, 0 1 0;
-         0 0 0, 0 0 0, 0 0 1];
+         1 0 0, T 0 0, 0.5*T^2 0 0 0 0 0;
+         0 1 0, 0 T 0, 0 0.5*T^2 0 0 0 0;
+         0 0 1, 0 0 T, 0 0 0.5*T^2 0 0 0;
+         0 0 0, 1 0 0, T 0 0 -T 0 0;
+         0 0 0, 0 1 0, 0 T 0, 0 -T 0;
+         0 0 0, 0 0 1, 0 0 T, 0 0 -T;
+         0 0 0, 0 0 0, 1 0 0, 0 0 0;
+         0 0 0, 0 0 0, 0 1 0, 0 0 0;
+         0 0 0, 0 0 0, 0 0 1, 0 0 0;
+         0 0 0, 0 0 0, 0 0 0, 1 0 0;
+         0 0 0, 0 0 0, 0 0 0, 0 1 0;
+         0 0 0, 0 0 0, 0 0 0, 0 0 1];
     
     % Kalman Filter: Initial Prediction
     if i == 1
         x(1:3) = [yaw pitch roll];
-        x(4:6) = [ypr_gyro_current(1) ypr_gyro_current(2) ypr_gyro_current(3)];
+        x(4:6) = [ypr_gyro_current(1) ypr_gyro_current(2) ypr_gyro_current(3)];       
         [x, P] = kf_predict(x, A, P, lambda);
     end
          
     % measurement transformation matrix
     H = [
-         1 0 0, 0 0 0, 0 0 0;
-         0 1 0, 0 0 0, 0 0 0;
-         0 0 1, 0 0 0, 0 0 0;
-         1 0 0, 0 0 0, 0 0 0;
-         0 1 0, 0 0 0, 0 0 0;
-         0 0 1, 0 0 0, 0 0 0;
-         0 0 0, 1 0 0, 0 0 0;
-         0 0 0, 0 1 0, 0 0 0;
-         0 0 0, 0 0 1, 0 0 0];
+         1 0 0, 0 0 0, 0 0 0, 0 0 0;
+         0 1 0, 0 0 0, 0 0 0, 0 0 0;
+         0 0 1, 0 0 0, 0 0 0, 0 0 0;
+         1 0 0, 0 0 0, 0 0 0, 0 0 0;
+         0 1 0, 0 0 0, 0 0 0, 0 0 0;
+         0 0 1, 0 0 0, 0 0 0, 0 0 0;
+         0 0 0, 1 0 0, 0 0 0, 1 0 0;
+         0 0 0, 0 1 0, 0 0 0, 0 1 0;
+         0 0 0, 0 0 1, 0 0 0, 0 0 1];
     
     % Measurement vector
     z = [
@@ -172,7 +189,7 @@ for i=1:N
     minA = min(min(min(A)), minA);
     minP = min(min(min(P)), minP);
     minz = min(min(z), minz);
-         
+    
     % Kalman Filter: Measurement Update
     [x, P] = kf_update(x, z, P, H, R);
     
