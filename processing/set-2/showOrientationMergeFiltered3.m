@@ -6,9 +6,9 @@
 clear all; home;
 
 %% Load the data
-dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'roll-and-tilt-at-45-90');
+%dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'roll-and-tilt-at-45-90');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'unmoved-with-x-pointing-forward');
-%dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-forward');
+dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-forward');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-y-pointing-left');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-up');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-z-pointing-up');
@@ -26,27 +26,22 @@ time = time(1:N);
 
 %% Prepare the Kalman filter
 
-% State variables:
-% angle
-% angular velocity
-% angular acceleration
-% gyro bias
-% ddcm bias
-
-% state matrix
+% state vector
 x = [0 0 0, ... % angles
      0 0 0, ... % angular velocities
      0 0 0]';   % angular accelerations
 
+gv = gyroscope.UserData.variance;
+ 
 % state covariance matrix
 P = [
-     5  0  0    0  0  0     0  0  0;
-     0  5  0    0  0  0     0  0  0;
-     0  0  5    0  0  0     0  0  0;
+     2  0  0    0  0  0     0  0  0;
+     0  2  0    0  0  0     0  0  0;
+     0  0  2    0  0  0     0  0  0;
 
-     0  0  0   .1  0  0     0  0  0;
-     0  0  0    0 .1  0     0  0  0;
-     0  0  0    0  0 .1     0  0  0;
+     0  0  0  gv(1) 0 0     0  0  0;
+     0  0  0    0 gv(2) 0   0  0  0;
+     0  0  0    0  0 gv(3)  0  0  0;
 
      0  0  0    0  0  0     1  0  0;
      0  0  0    0  0  0     0  1  0;
@@ -59,20 +54,20 @@ s = 0.002;
 m = 0.01;
 
 Q = [
-     m  0  t    0  0  0     0  0  0;
-     0  m  0    0  0  0     0  0  0;
-     t  0  m    0  0  0     0  0  0;
+     5  0  0    0  0  0     0  0  0;
+     0  5  0    0  0  0     0  0  0;
+     0  0  5    0  0  0     0  0  0;
 
-     0  0  0    t  0  0     0  0  0;
-     0  0  0    0  t  0     0  0  0;
-     0  0  0    0  0  t     0  0  0;
+     0  0  0  gv(1) 0 0     0  0  0;
+     0  0  0    0 gv(2) 0   0  0  0;
+     0  0  0    0  0  gv(3) 0  0  0;
 
      0  0  0    0  0  0     s  0  0;
      0  0  0    0  0  0     0  s  0;
      0  0  0    0  0  0     0  0  s];
    
 % Lambda coefficient for artificial increase of covariance
-lambda = 1;
+lambda = .99;
 
 %% Get roll, pitch and yaw
 hwb = waitbar(0, 'Calculating states ...');
@@ -107,7 +102,7 @@ for i=1:N
     % as for IDDCM ... Euler rates are not body rates.
     
     % Prepare Kalman Filter
-    
+   
     % state matrix
     A = [
          1 0 0    T 0 0     0.5*T^2 0 0;
@@ -131,7 +126,21 @@ for i=1:N
         [x, P] = kf_predict(x, A, P, lambda, Q);
     end
         
-    if abs(pitch) > 45
+    %{
+    for axis = 1:3
+        if x(axis) > 180
+            x(axis) = x(axis) - 360;
+        elseif x(axis) < -180
+            x(axis) = x(axis) + 360;
+        end
+    end    
+    
+    if gyroscope.Time(i) > 17.97
+        1;
+    end
+    %}
+    
+    if abs(pitch) > 0
 
         % measurement transformation matrix
         H = [
@@ -166,18 +175,18 @@ for i=1:N
              0 0 0 0 1 0 0 0 0;
              0 0 0 0 0 1 0 0 0];
 
-        s = (abs(pitch)/50)^2 * 50 + 20;
+        s = (abs(pitch)/50)^2 * 50 + 10;
+        c = (abs(pitch)/50)^2 * 50;
          
         % measurement noise matrix
         R = [
-            s   0   0   0   0   0;
+            s   0   c   0   0   0;
             0  10   0   0   0   0;
-            0   0   s   0   0   0;
+            c   0   s   0   0   0;
             0   0   0   0.013982   0   0;
             0   0   0   0   0.0071912  0;
             0   0   0   0   0   0.01041];
-
-
+        
         % Measurement vector
         z = [
              yaw;
@@ -188,9 +197,18 @@ for i=1:N
              ypr_gyro_current(3)];        
         
     end
-     
+    
     % Kalman Filter: Measurement Update
     [x, P] = kf_update(x, z, P, H, R);
+    
+    % correct axes
+    for axis = 1:3
+        if x(axis) > 180
+            x(axis) = x(axis) - 360;
+        elseif x(axis) < -180
+            x(axis) = x(axis) + 360;
+        end
+    end
     
     % store state
     ypr_kf(i, :)    = [x(1)  x(2)  x(3)];
@@ -198,7 +216,7 @@ for i=1:N
     
     % Kalman Filter: Predict
     [x, P] = kf_predict(x, A, P, lambda, Q);
-    
+        
     waitbar(i/N, hwb);
 end
 close(hwb);
