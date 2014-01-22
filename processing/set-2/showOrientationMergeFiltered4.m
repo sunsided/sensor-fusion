@@ -116,11 +116,11 @@ for i=1:N
         qy = current_orientation(3);
         qz = current_orientation(4);
         
-        heading     = atan2d(2*qy*qw-2*qx*qz , 1 - 2*qy^2 - 2*qz^2);
-        attitude    = asind(2*qx*qy + 2*qz*qw);
-        bank        = atan2d(2*qx*qw-2*qy*qz , 1 - 2*qx^2 - 2*qz^2);
+        pitch     =-atan2d(2*qy*qw-2*qx*qz , 1 - 2*qy^2 - 2*qz^2);
+        qyaw    = asind(2*qx*qy + 2*qz*qw);
+        qroll        = atan2d(2*qx*qw-2*qy*qz , 1 - 2*qx^2 - 2*qz^2);
         
-        ypr2(i, :) = [attitude, heading, bank];
+        ypr2(i, :) = [qyaw, pitch, qroll];
     end
     
     % Prepare Kalman Filter
@@ -286,7 +286,7 @@ title('Roll', ...
     );
 ylabel('angle [\circ]');
 xlabel('t [s]');
-legendHandle = legend('DCM raw');
+legendHandle = legend('DCM raw', 'Quaternion');
 set(legendHandle, 'TextColor', [1 1 1]);
 
 %% Pitch
@@ -326,7 +326,7 @@ title('Pitch (elevation)', ...
     );
 ylabel('angle [\circ]');
 xlabel('t [s]');
-legendHandle = legend('DCM raw');
+legendHandle = legend('DCM raw', 'Quaternion');
 set(legendHandle, 'TextColor', [1 1 1]);
 
 %% Yaw
@@ -366,7 +366,7 @@ title('Yaw (azimuth, heading)', ...
     );
 ylabel('angle [\circ]');
 xlabel('t [s]');
-legendHandle = legend('DCM raw');
+legendHandle = legend('DCM raw', 'Quaternion');
 set(legendHandle, 'TextColor', [1 1 1]);
 
 
