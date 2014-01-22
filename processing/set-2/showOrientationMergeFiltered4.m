@@ -105,7 +105,7 @@ for i=1:N
     
     % Get orientation quaternion from DCM
     if i > 1
-        current_orientation = quaternionFromRotation(DCM');
+        current_orientation = quaternionFromRotation(DCM);
         omega = quaternionToAngularVelocity(current_orientation, previous_orientation, T);   
         previous_orientation = current_orientation;
         
@@ -116,9 +116,9 @@ for i=1:N
         qy = current_orientation(3);
         qz = current_orientation(4);
         
-        pitch  = -atan2d(2*qy*qw-2*qx*qz , 1 - 2*qy^2 - 2*qz^2);
-        yaw    = -asind(2*qx*qy + 2*qz*qw);
-        roll   = -atan2d(2*qx*qw-2*qy*qz , 1 - 2*qx^2 - 2*qz^2);
+        pitch  = atan2d(2*qy*qw-2*qx*qz , 1 - 2*qy^2 - 2*qz^2);
+        yaw    = asind(2*qx*qy + 2*qz*qw);
+        roll   = atan2d(2*qx*qw-2*qy*qz , 1 - 2*qx^2 - 2*qz^2);
         
         ypr2(i, :) = [yaw, pitch, roll];
     end
