@@ -2,8 +2,8 @@ clear all; home;
 
 %% Load the data
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'roll-and-tilt-at-45-90');
-dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'unmoved-with-x-pointing-forward');
-%dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-forward');
+%dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'unmoved-with-x-pointing-forward');
+dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-forward');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-y-pointing-left');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-up');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-z-pointing-up');
@@ -76,13 +76,33 @@ for i=1:N
     % Pitch calculation from accelerometer works 100%
     qpitch2 =  atan2d(zbase(1), sqrt(zbase(2)^2+zbase(3)^2));
     
+    % Note that the square root does not need to be taken
+    % but yields better results to to smaller error.
+    %qpitch2 =  atan2d(zbase(1), zbase(2)^2+zbase(3)^2);
+    
     % Roll angle from accelerometer works okay except when in pitch
     % singularity, but mirrors at 90° (only measures +/- 90° angle)
     qroll2  = -atan2d(zbase(2), sqrt(zbase(1)^2+zbase(3)^2));
     
+    % Note that the square root does not need to be taken
+    % but yields better results to to smaller error.
+    %qroll2  = -atan2d(zbase(2), zbase(1)^2+zbase(3)^2);
+    
     % Yaw angle from accelerometer is basically useless even under
     % non-singular orientations
-    qyaw2   =  atan2d(sqrt(zbase(1)^2+zbase(2)^2), zbase(3));
+    qyaw2   =  atan2d(zbase(3), sqrt(zbase(1)^2+zbase(2)^2));
+    %qyaw2   =  atan2d(zbase(3), zbase(1)^2+zbase(2)^2);
+    
+    % They can be used however to correct the mirroring effect
+    % of the roll angle.
+    if qyaw2 > 0
+        qroll2 = -qroll2 + 180;
+        
+        % wrap around at 360°
+        if qroll2 > 180
+            qroll2 = qroll2 - 360
+        end
+    end
     
     %current_ypr
     ypr2(i, :) = [qyaw2, qpitch2, qroll2];
