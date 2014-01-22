@@ -2,8 +2,8 @@ clear all; home;
 
 %% Load the data
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'roll-and-tilt-at-45-90');
-%dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'unmoved-with-x-pointing-forward');
-dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-forward');
+dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'unmoved-with-x-pointing-forward');
+%dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-forward');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-y-pointing-left');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-up');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-z-pointing-up');
@@ -69,127 +69,23 @@ for i=1:N
         ypr_gyro(i, :) = ypr_gyro(i-1, :) + ypr_gyro_current * T;
     end
     
-    % Get orientation quaternion from DCM
-    if i > 1
-        current_orientation = quaternionFromRotation(DCM);
-        omega = quaternionToAngularVelocity(current_orientation, previous_orientation, T);   
-        previous_orientation = current_orientation;
-        
-        %ypr2(i, :) = ypr2(i-1, :) + omega;
-                
-        qw = current_orientation(1);
-        qx = current_orientation(2);
-        qy = current_orientation(3);
-        qz = current_orientation(4);
-        
-        %{
-        % this one has a singularity at yaw +/- 90°
-        qpitch1  = atan2d(2*qy*qw-2*qx*qz , 1 - 2*qy^2 - 2*qz^2);
-        qyaw1    = asind(2*qx*qy + 2*qz*qw);
-        qroll1   = atan2d(2*qx*qw-2*qy*qz , 1 - 2*qx^2 - 2*qz^2);
-        
-        % this one has a singularity at pitch +/- 90°
-        % it performs exceptionally bad at pitch +/- 90° and should not be
-        % used to estimate anything under these conditions.
-        qroll2   = -atan2d(-2*qy*qz-2*qx*qw , 1 - 2*qx^2 - 2*qy^2);
-        qpitch2  =  asind(2*qx*qz + 2*qy*qw);
-        qyaw2    = -atan2d(-2*qx*qy-2*qz*qw , 1 - 2*qy^2 - 2*qz^2);
-        
-        %}
-               
-        %ypr2(i, :) = [qyaw1, qpitch1, qroll1];
-    end
 
     % Fetch base vectors
     zbase = a / norm(a);
-    xbase = m / norm(m);
 
-    % The first coordinate system is aligned with the accelerometer reading
-    y1 = cross(xbase, zbase);
-    y1 = y1/norm(y1);
+    % Pitch calculation from accelerometer works 100%
+    qpitch2 =  atan2d(zbase(1), sqrt(zbase(2)^2+zbase(3)^2));
     
-    x1 = cross(zbase, y1);    % Y is normalised because of Z and Y
-    x1 = x1/norm(x1);
+    % Roll angle from accelerometer works okay except when in pitch
+    % singularity, but mirrors at 90° (only measures +/- 90° angle)
+    qroll2  = -atan2d(zbase(2), sqrt(zbase(1)^2+zbase(3)^2));
     
-    z1 = cross(x1, y1);
-    z1 = z1/norm(z1);
-    
-    q1 = quaternionFromRotation([x1; y1; z1]);
-    
-
-    % The second coordinate system is aligned with the magnetometer
-    y2 = cross(xbase, zbase);
-    y2 = y2/norm(y2);
-        
-    z2 = cross(xbase, y2);
-    z2 = z2/norm(z2);
-    
-    x2 = cross(y2, z2);
-    x2 = x2/norm(x2);
-    
-
-    q2 = quaternionFromRotation([x2; y2; z2]);
-    
-    % find difference quaternion
-    q3 = quaternionMul(q1, quaternionInv(q2));
-    
-    qw = q3(1);
-    qx = q3(2);
-    qy = q3(3);
-    qz = q3(4);
-    
-    % calculate angular displacement
-    dqp  = atan2d(2*qy*qw-2*qx*qz , 1 - 2*qy^2 - 2*qz^2);
-    %dqy  = asind(2*qx*qy + 2*qz*qw);
-    %dqe  = atan2d(2*qx*qw-2*qy*qz , 1 - 2*qx^2 - 2*qz^2);
-    
-%}    
-%{   
-    DCM = [0            0            1;
-          0            1            0;
-         -1            0            0 ] * DCM;
-         %}
-    
-    %DCM = [x2; y2; z2]';
-
-    % extract angles
-    % see: William Premerlani, "Computing Euler Angles from Direction Cosines"   
-    %{
-    qpitch2 =  asind(DCM(1, 3));
-    qroll2  = -atan2d(DCM(2, 3)/cosd(qpitch2), DCM(3, 3)/cosd(qpitch2));
-    qyaw2   =  atan2d(DCM(1, 2), DCM(1, 1));
-    %}
-    
-    %qroll2 = atan2d(DCM(2,3), DCM(3,3));
-    %c2 = sqrt(DCM(1,1)^2 + DCM(1,2)^2);
-    %qpitch2 = atan2d(-DCM(1,3), c2);
-    %s1 = sind(qroll2);
-    %c1 = cosd(qroll2);
-    %qyaw2 = atan2d(s1 * DCM(3,1) - c1*DCM(2,1), c1*DCM(2,2) - s1*DCM(3,1));
-
-    qyaw2   = NaN;
-    qpitch2 = -acosd(dot(z1, [0 0 1]));
-    qroll2  = NaN;
+    % Yaw angle from accelerometer is basically useless even under
+    % non-singular orientations
+    qyaw2   =  atan2d(sqrt(zbase(1)^2+zbase(2)^2), zbase(3));
     
     %current_ypr
     ypr2(i, :) = [qyaw2, qpitch2, qroll2];
-    
-    %{
-    if exist('lol', 'var')
-       delete(lol);
-    end
-    
-    lol(1) = quiver3(0, 0, 0, accelerometer.Data(i,1), accelerometer.Data(i,2), accelerometer.Data(i,3), 'Color', [1 0 0], 'Parent', qax);
-    lol(2) = quiver3(0, 0, 0, compass.Data(i,1), compass.Data(i,2), compass.Data(i,3), 'Color', [0 1 0], 'Parent', qax);
-    
-    lol(3) = quiver3(0, 0, 0, x1(1), x1(2), x1(3), 'Color', [0 0 1], 'LineWidth', 2, 'Parent', qax);
-    lol(4) = quiver3(0, 0, 0, y1(1), y1(2), y1(3), 'Color', [0 0 1], 'LineWidth', 2, 'Parent', qax);
-    lol(5) = quiver3(0, 0, 0, z1(1), z1(2), z1(3), 'Color', [0 0 1], 'LineWidth', 2, 'Parent', qax);
-    
-    lol(6) = quiver3(0, 0, 0, x2(1), x2(2), x2(3), 'Color', [1 0 1], 'LineWidth', 2, 'Parent', qax);
-    lol(7) = quiver3(0, 0, 0, y2(1), y2(2), y2(3), 'Color', [1 0 1], 'LineWidth', 2, 'Parent', qax);
-    lol(8) = quiver3(0, 0, 0, z2(1), z2(2), z2(3), 'Color', [1 0 1], 'LineWidth', 2, 'Parent', qax);
-    %}
     
     % store state
     ypr_kf(i, :)    = [x(1)  x(2)  x(3)];
