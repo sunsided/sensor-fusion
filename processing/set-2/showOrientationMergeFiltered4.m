@@ -4,9 +4,9 @@ clear all; home;
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'roll-and-tilt-at-45-90');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'unmoved-with-x-pointing-forward');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-forward');
-dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-y-pointing-left');
+%dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-y-pointing-left');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-up');
-%dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-z-pointing-up');
+dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-z-pointing-up');
 [accelerometer, gyroscope, compass, ~] = loadData(dataSetFolder, true);
 
 % resample the time series
@@ -116,11 +116,11 @@ for i=1:N
         qy = current_orientation(3);
         qz = current_orientation(4);
         
-        pitch     =-atan2d(2*qy*qw-2*qx*qz , 1 - 2*qy^2 - 2*qz^2);
-        qyaw    = asind(2*qx*qy + 2*qz*qw);
-        qroll        = atan2d(2*qx*qw-2*qy*qz , 1 - 2*qx^2 - 2*qz^2);
+        pitch  = -atan2d(2*qy*qw-2*qx*qz , 1 - 2*qy^2 - 2*qz^2);
+        yaw    = -asind(2*qx*qy + 2*qz*qw);
+        roll   = -atan2d(2*qx*qw-2*qy*qz , 1 - 2*qx^2 - 2*qz^2);
         
-        ypr2(i, :) = [qyaw, pitch, qroll];
+        ypr2(i, :) = [yaw, pitch, roll];
     end
     
     % Prepare Kalman Filter
@@ -151,7 +151,7 @@ for i=1:N
     
     % Axis R base value
     RA = 1;
-    SwitchThreshold = 0;
+    SwitchThreshold = 80;
     SwitchScale = 1;
     
     if abs(pitch) >= SwitchThreshold
