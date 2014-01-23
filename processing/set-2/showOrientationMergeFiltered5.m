@@ -3,8 +3,8 @@ clear all; home;
 %% Load the data
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'roll-and-tilt-at-45-90');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'unmoved-with-x-pointing-forward');
-dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-forward');
-%dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-y-pointing-left');
+%dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-forward');
+dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-y-pointing-left');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-up');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-z-pointing-up');
 [accelerometer, gyroscope, compass, ~] = loadData(dataSetFolder, true);
@@ -66,80 +66,41 @@ for i=1:N
         
         gyro_current = [-gyroscope.Data(i,1) -gyroscope.Data(i,2) gyroscope.Data(i,3)];
         ypr_gyro_current = [gyro_current(3) gyro_current(2) gyro_current(1)];
+        ypr_gyro_integrated = ypr_gyro(i-1, :) + ypr_gyro_current * T;
+
+        % Apply constraint on gyro integration:
+        % Pitch is defined to be [-90° .. 90°]
+        % If pitch gets smaller or larger than that respectively,
+        % Roll and Heading angles are inversed.
+        if ypr_gyro_integrated(2) > 90
+            
+            % a constant needs to be defined that determines the
+            % sign of the integration
+            % so as to flip the integration order.
+            
+            % Within the Kalman filter, estimated angular velocities
+            % are to be inverted appropriately.
+            
+        elseif ypr_gyro_integrated(2) < -90
+        end
+        
         ypr_gyro(i, :) = ypr_gyro(i-1, :) + ypr_gyro_current * T;
+        
     end
     
 
     % Fetch base vectors
     zbase = a / norm(a);
 
-    % Pitch calculation from accelerometer works 100%
-    qpitch2 =  atan2d(zbase(1), sqrt(zbase(2)^2+zbase(3)^2));
+    qroll2  = atan2d(-zbase(2), zbase(3));
     
-    % Note that the square root does not need to be taken
-    % but yields better results to to smaller error.
-    %qpitch2 =  atan2d(zbase(1), zbase(2)^2+zbase(3)^2);
-    
-    % This gives a good reading for pitch with full +/- 180°
-    % (denominator can be negative).
-    % It gives readings that are off by 180° if roll is grater than 90° or
-    % smaller than -90°.
-    % Estimated roll may be used to correct for this.
-    qpitch3  = atan2d(-zbase(1), sign(zbase(3))*sqrt(zbase(2)^2+zbase(3)^2)) - 180;
-    
-    % Roll angle from accelerometer works okay except when in pitch
-    % singularity, but mirrors at 90° (only measures +/- 90° angle)
-    %qroll2  = -atan2d(zbase(2), sqrt(zbase(1)^2+zbase(3)^2));
-   
-    % Note that the square root does not need to be taken
-    % but yields better results to to smaller error.
-    %qroll2  = -atan2d(zbase(2), zbase(1)^2+zbase(3)^2);
-    
-     % This gives a good reading for roll with full +/- 180°
-    % (denominator can be negative).
-    % It gives readings that are off by 180° if roll is greater than 90° or
-    % smaller than -90°.
-    % Estimated roll may be used to correct for this.
-    qroll2  =  atan2d(zbase(2), sign(zbase(3))*sqrt(zbase(1)^2+zbase(3)^2)) + 180;
-    
-    % Yaw angle from accelerometer is basically useless even under
-    % non-singular orientations
-    qyaw2   =  atan2d(zbase(3), sqrt(zbase(1)^2+zbase(2)^2));
-
-    if qyaw2 > 0 
-        if (qpitch3 > 90 || qpitch3 < -90) && (qroll2 > 90 || qroll2 < -90)
-            
-            % Note that this usually means pitch = +/- 90°,
-            % so no value for roll can be given.
-            
-            % The estimated roll can be used to check for this constraint.
-            if (qroll2 < 160 || qroll2 > 200) && (qroll2 > -160 || qroll2 < -200)
-                qpitch3 = 180 - qpitch3;
-            end
-            
-            qroll2 = qroll2 - 180;
-        else
-            % if yaw > 0 AND pitch < -90° or pitch > 90°, correct roll by -180°
-            % see: rotate-ccw-around-y-pointing-left
-            if (qpitch3 > 90 || qpitch3 < -90)
-                qroll2 = qroll2 - 180;
-            end
-
-            % if roll < -90° or roll > 90°, correct pitch by +180°
-            % see: rotate-ccw-around-x-pointing-forward
-            %if qyaw2 > 0 && (qroll2 > 90 || qroll2 < -90)
-            if (qroll2 > 90 || qroll2 < -90)
-                qpitch3 = qpitch3 - 180;
-            end    
-        end
-    end
-     
-    if qpitch3 > 180
-        qpitch3 = qpitch3 - 360;
-    end
+    % Note that Pitch is defined to be [-90° .. 90°]
+    % If pitch gets smaller or larger than that respectively,
+    % Roll and Heading angles are inversed.
+    qpitch2 = atan2d(zbase(1), sqrt(zbase(2)^2 + zbase(3)^2));
     
     %current_ypr
-    ypr2(i, :) = [qyaw2, qpitch3, qroll2];
+    ypr2(i, :) = [NaN, qpitch2, qroll2];
     
     % store state
     ypr_kf(i, :)    = [x(1)  x(2)  x(3)];
