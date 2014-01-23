@@ -1,8 +1,8 @@
 clear all; home;
 
 %% Load the data
-%dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'roll-and-tilt-at-45-90');
-dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'unmoved-with-x-pointing-forward');
+dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'roll-and-tilt-at-45-90');
+%dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'unmoved-with-x-pointing-forward');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-forward');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-y-pointing-left');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-up');
@@ -79,17 +79,17 @@ Q = [
 gv = gyroscope.UserData.variance;
 gV = gv.^2;
 P = [
-      2   0   0   0      0   0   0   0      0   0   0   0;
+     10   0   0   0      0   0   0   0      0   0   0   0;
       0 gv(1) 0   0      0   0   0   0      0   0   0   0;
       0   0 gV(1) 0      0   0   0   0      0   0   0   0;
       0   0   0  .1      0   0   0   0      0   0   0   0;
 
-      0   0   0   0      2   0   0   0      0   0   0   0;
+      0   0   0   0      5   0   0   0      0   0   0   0;
       0   0   0   0      0 gv(2) 0   0      0   0   0   0;
       0   0   0   0      0   0 gV(2) 0      0   0   0   0;
       0   0   0   0      0   0   0  .1      0   0   0   0;
 
-      0   0   0   0      0   0   0   0      2   0   0   0;
+      0   0   0   0      0   0   0   0     10   0   0   0;
       0   0   0   0      0   0   0   0      0 gv(3) 0   0;
       0   0   0   0      0   0   0   0      0   0 gV(3) 0;
       0   0   0   0      0   0   0   0      0   0   0  .1];
@@ -97,7 +97,7 @@ P = [
 B = eye(size(P));
    
 % Lambda coefficient for artificial increase of covariance
-lambda = .99;
+lambda = 1;
 
 %% Get roll, pitch and yaw
 hwb = waitbar(0, 'Calculating states ...');
@@ -166,7 +166,8 @@ for i=1:N
     % see: Position Recovery from Accelerometric Sensors 
     %      Antonio Filieri, Rossella Melchiotti
     
-    qc = 0.166^2;
+    %qc = 0.166^2;
+    qc = 25^2;
     
     qtt = (1/20*qc*T^5); % cov(theta, theta)
     qto = (1/8*qc*T^4);  % cov(theta, omega)
@@ -199,15 +200,14 @@ for i=1:N
     
     % Kalman Filter: Predict
     [x, P] = kf_predict(x, A, P, lambda, Q);
+
+    % Note that roll and yaw estimation is still very bad in this approach
+    % when pitch angle goes up to +/- ~40°
     
-    % Axis R base value
-    RA = 45;
-    SwitchThreshold = 0;
-    SwitchScale = 1;
-    
+    % Pitch threshold to avoid yaw and roll measurements
+    SwitchThreshold = 45;
     if abs(pitch) > SwitchThreshold
 
-        %{
         % measurement transformation matrix
         H = [
              0 0 0 0 1 0 0 0 0 0 0 0;
@@ -215,12 +215,15 @@ for i=1:N
              0 0 0 0 0 1 0 0 0 0 0 0;
              0 0 0 0 0 0 0 0 0 1 0 0];
 
+        % Set variance in angle measurements
+        Rp = 4^2; % 5 degree error
+         
         % measurement noise matrix
         R = [
-           RA   0   0   0;
-            0   gv(1)   0   0;
-            0   0   gv(2)  0;
-            0   0   0   gv(3)];
+           Rp    0    0    0;
+            0  gv(1)  0    0;
+            0    0  gv(2)  0;
+            0    0    0   gv(3)];
 
         % Fetch mixed angle
 %        roll_yaw_sum = atan2d(-DCM(2,1), DCM(2,2));
@@ -231,8 +234,10 @@ for i=1:N
              ypr_gyro_current(1);
              ypr_gyro_current(2);
              ypr_gyro_current(3)];
-%}        
         
+        % The next block prevents measuring angles altogether
+         
+        %{
         % measurement transformation matrix
         H = [
              0 1 0 0 0 0 0 0 0 0 0 0;
@@ -250,6 +255,7 @@ for i=1:N
              ypr_gyro_current(1);
              ypr_gyro_current(2);
              ypr_gyro_current(3)];
+        %}
         
     else
         
@@ -262,14 +268,16 @@ for i=1:N
              0 0 0 0 0 1 0 0 0 0 0 0;
              0 0 0 0 0 0 0 0 0 1 0 0];
 
-        s = ((abs(pitch)+1)/(SwitchThreshold+1))^2 * SwitchScale + RA;
-        c = ((abs(pitch)+1)/(SwitchThreshold+1))^2 * SwitchScale;
-         
+        % Set variance in angle measurements
+        Rp = 10^2; % 5 degree error
+        Ry =  4^2; % 5 degree error
+        Rr = 10^2; % 5 degree error
+        
         % measurement noise matrix
         R = [
-           RA   0   0   0   0   0;
-            0  RA   0   0   0   0;
-            0   0  RA   0   0   0;
+           Ry   0   0   0   0   0;
+            0  Rp   0   0   0   0;
+            0   0  Rr   0   0   0;
             0   0   0   gv(1)   0   0;
             0   0   0   0   gv(2)  0;
             0   0   0   0   0   gv(3)];
