@@ -1,10 +1,10 @@
 clear all; home;
 
 %% Load the data
-dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'roll-and-tilt-at-45-90');
+%dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'roll-and-tilt-at-45-90');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'unmoved-with-x-pointing-forward');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-forward');
-%dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-y-pointing-left');
+dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-y-pointing-left');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-up');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-z-pointing-up');
 [accelerometer, gyroscope, compass, ~] = loadData(dataSetFolder, true);
@@ -45,7 +45,8 @@ x = [0, ... % yaw   angles
 % Estimated cycle time
 T = .1;
 
-qc = 0.166^2;
+%qc = 0.166^2;
+qc = 90^2;
 
 qtt = (1/20*qc*T^5); % cov(theta, theta)
 qto = (1/8*qc*T^4);  % cov(theta, omega)
@@ -76,22 +77,22 @@ Q = [
       0   0   0   0      0   0   0   0    qtb   0   0 qbb];
 
 % state covariance matrix
-gv = gyroscope.UserData.variance;
+gv = 2*gyroscope.UserData.variance;
 gV = gv.^2;
 P = [
-     10   0   0   0      0   0   0   0      0   0   0   0;
+     90   0   0   0      0   0   0   0      0   0   0   0;
       0 gv(1) 0   0      0   0   0   0      0   0   0   0;
-      0   0 gV(1) 0      0   0   0   0      0   0   0   0;
+      0   0  30   0      0   0   0   0      0   0   0   0;
       0   0   0  .1      0   0   0   0      0   0   0   0;
 
-      0   0   0   0      5   0   0   0      0   0   0   0;
+      0   0   0   0     10   0   0   0      0   0   0   0;
       0   0   0   0      0 gv(2) 0   0      0   0   0   0;
-      0   0   0   0      0   0 gV(2) 0      0   0   0   0;
+      0   0   0   0      0   0  30   0      0   0   0   0;
       0   0   0   0      0   0   0  .1      0   0   0   0;
 
-      0   0   0   0      0   0   0   0     10   0   0   0;
+      0   0   0   0      0   0   0   0     90   0   0   0;
       0   0   0   0      0   0   0   0      0 gv(3) 0   0;
-      0   0   0   0      0   0   0   0      0   0 gV(3) 0;
+      0   0   0   0      0   0   0   0      0   0  30   0;
       0   0   0   0      0   0   0   0      0   0   0  .1];
    
 B = eye(size(P));
@@ -157,7 +158,6 @@ for i=1:N
         x(5) = pitch;
         x(9) = roll;
     end
-      
     
     % Update process noise
     % Integrational errors propagate from acceleration to
@@ -167,7 +167,6 @@ for i=1:N
     %      Antonio Filieri, Rossella Melchiotti
     
     %qc = 0.166^2;
-    qc = 25^2;
     
     qtt = (1/20*qc*T^5); % cov(theta, theta)
     qto = (1/8*qc*T^4);  % cov(theta, omega)
@@ -200,7 +199,21 @@ for i=1:N
     
     % Kalman Filter: Predict
     [x, P] = kf_predict(x, A, P, lambda, Q);
-
+    
+       
+    % Apply constraints to the estimated state
+    if yaw < -160 && x(1) > 160
+        x(1) = x(1) - 360;
+    elseif yaw > 160 && x(1) < -160
+        x(1) = x(1) + 360;
+    end
+        
+    if roll < -160 && x(9) > 160
+        x(9) = x(9) - 360;
+    elseif roll > 160 && x(9) < -160
+        x(9) = x(9) + 360;
+    end    
+    
     % Note that roll and yaw estimation is still very bad in this approach
     % when pitch angle goes up to +/- ~40°
     
@@ -295,7 +308,7 @@ for i=1:N
 
     % Kalman Filter: Measurement Update
     [x, P] = kf_update(x, z, P, H, R);
-       
+    
     % store state
     ypr_kf(i, :)    = [x(1)  x(5)  x(9)];
     omega_kf(i, :)  = [x(2), x(6), x(10)];
