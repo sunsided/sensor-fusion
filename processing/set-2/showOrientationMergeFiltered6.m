@@ -173,6 +173,10 @@ for i=1:N
      0 qtb   0    0   0   0     0   0   0     0 .01   0;
      0   0 qtb    0   0   0     0   0   0     0   0 .01];
      
+    if i == 1
+        P = Q;
+    end
+ 
     % Axis R base value
     RA = 45;
     SwitchThreshold = 0;
