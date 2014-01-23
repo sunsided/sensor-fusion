@@ -86,21 +86,50 @@ for i=1:N
         
         ypr_gyro(i, :) = ypr_gyro(i-1, :) + ypr_gyro_current * T;
         
+    end  
+
+    % Fetch base vectors.
+    % Invert acceleration to measure up instead of gravity.
+    zbase = -a / norm(a);
+
+    % Assuming aerospace reference system (Tait-Brian XYZ)
+    
+    % For accelerometer roll and pitch calculation, see
+    % http://cache.freescale.com/files/sensors/doc/app_note/AN3461.pdf
+    
+    % Find roll from accelerometer
+    qroll2_unstable  = atan2d(zbase(2), zbase(3));
+    
+    % Calculate stable approximation of roll angle
+    mu = 0.01;
+    qroll2_stable  = atan2d(zbase(2), sign(zbase(3)) * sqrt(mu*zbase(1)^2 + zbase(3)^2));
+
+    % Use this fix is applied to prevent the 180° roll angle inversion
+    % when pitch would be becoming smaller than -90° or larger than 90°.
+    % (See integrated gyroscope readings for the effect.)
+    % The uncorrected value is the true reading, however, since having
+    % a pitch angle lower than -90° or larger than 90° results in the
+    % inverse position, i.e. flipped roll and heading.
+    %{
+    if zbase(3) < 0
+       qroll2_stable = qroll2_stable - 180;
+       qroll2_unstable = qroll2_unstable - 180;
     end
+    %}
     
-
-    % Fetch base vectors
-    zbase = a / norm(a);
-
-    qroll2  = atan2d(-zbase(2), zbase(3));
+    % Calculate error of roll angle to unstable, exact value
+    roll_error = qroll2_stable - qroll2_unstable;
     
+    qyaw2 = roll_error;
+        
     % Note that Pitch is defined to be [-90° .. 90°]
-    % If pitch gets smaller or larger than that respectively,
-    % Roll and Heading angles are inversed.
-    qpitch2 = atan2d(zbase(1), sqrt(zbase(2)^2 + zbase(3)^2));
-    
+    %
+    % We are negating here because of the inverted sign
+    % of the accelerometer reading
+    qpitch2 = -atan2d(zbase(1), sqrt(zbase(2)^2 + zbase(3)^2));
+        
     %current_ypr
-    ypr2(i, :) = [NaN, qpitch2, qroll2];
+    ypr2(i, :) = [qyaw2, qpitch2, qroll2_stable];
     
     % store state
     ypr_kf(i, :)    = [x(1)  x(2)  x(3)];
