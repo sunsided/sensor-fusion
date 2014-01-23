@@ -22,54 +22,79 @@ time = time(1:N);
 %% Prepare the Kalman filter
 
 % state vector
-x = [0 0 0, ... % angles
-     0 0 0, ... % angular velocities
-     0 0 0, ... % angular accelerations
-     0 0 0]';   % gyro integrational drift
 
-gv = gyroscope.UserData.variance;
+% Initial integrational drift values taken from uncorrected
+% steady measurements.
+ix = .017;
+iy = .0035;
+iz = .004;
+
+x = [0, ... % yaw   angles
+     0, ... %       angular velocities
+     0, ... %       angular accelerations
+    iz, ... %       gyro integrational drift
+     0, ... % pitch angles
+     0, ... %       angular velocities
+     0, ... %       angular accelerations
+    iy, ... %       gyro integrational drift
+     0, ... % roll  angles
+     0, ... %       angular velocities
+     0, ... %       angular accelerations
+    ix]';   %       gyro integrational drift
  
-% state covariance matrix
-P = [
-     2  0  0    0  0  0     0  0  0     0  0  0;
-     0  2  0    0  0  0     0  0  0     0  0  0;
-     0  0  2    0  0  0     0  0  0     0  0  0;
+% Estimated cycle time
+T = .1;
 
-     0  0  0  gv(1) 0 0     0  0  0     0  0  0;
-     0  0  0    0 gv(2) 0   0  0  0     0  0  0;
-     0  0  0    0  0 gv(3)  0  0  0     0  0  0;
+qc = 0.166^2;
 
-     0  0  0    0  0  0    .1  0  0     0  0  0;
-     0  0  0    0  0  0     0 .1  0     0  0  0;
-     0  0  0    0  0  0     0  0 .1     0  0  0;
-     
-     0  0  0    0  0  0     0  0  0    .1 0  0;
-     0  0  0    0  0  0     0  0  0     0 .1 0;
-     0  0  0    0  0  0     0  0  0     0  0 .1];
+qtt = (1/20*qc*T^5); % cov(theta, theta)
+qto = (1/8*qc*T^4);  % cov(theta, omega)
+qtb = (1/8*qc*T^4);  % cov(theta, omega)
+qta = (1/6*qc*T^3);  % cov(theta, alpha)
 
-B = eye(size(P));
+qoo = (1/3*qc*T^3);  % var(omega)
+qoa = (1/2*qc*T^2);  % cov(theta, alpha)
 
-t = 0.001;
-s = 0.002;
-m = 0.01;
+qaa = (qc*T);        % var(theta)
 
-% too large values in Q yield bad results
+qbb = (1/3*qc*T^3);  % var(bias)
+
 Q = [
-     m  0  0    0  0  0     0  0  0     0  0  0;
-     0  m  0    0  0  0     0  0  0     0  0  0;
-     0  0  m    0  0  0     0  0  0     0  0  0;
+    qtt qto qta qtb      0   0   0   0      0   0   0   0;
+    qto qoo qoa   0      0   0   0   0      0   0   0   0;
+    qta qoa qaa   0      0   0   0   0      0   0   0   0;
+    qtb   0   0 qbb      0   0   0   0      0   0   0   0;
 
-     0  0  0    t  0  0     0  0  0     0  0  0;
-     0  0  0    0  t  0     0  0  0     0  0  0;
-     0  0  0    0  0  t     0  0  0     0  0  0;
+      0   0   0   0    qtt qto qta qtb      0   0   0   0;
+      0   0   0   0    qto qoo qoa   0      0   0   0   0;
+      0   0   0   0    qta qoa qaa   0      0   0   0   0;
+      0   0   0   0    qtb   0   0 qbb      0   0   0   0;
 
-     0  0  0    0  0  0     s  0  0     0  0  0;
-     0  0  0    0  0  0     0  s  0     0  0  0;
-     0  0  0    0  0  0     0  0  s     0  0  0;
-     
-     0  0  0    0  0  0     0  0  0     m  0  0;
-     0  0  0    0  0  0     0  0  0     0  m  0;
-     0  0  0    0  0  0     0  0  0     0  0  m];
+      0   0   0   0      0   0   0   0    qtt qto qta qtb;
+      0   0   0   0      0   0   0   0    qto qoo qoa   0;
+      0   0   0   0      0   0   0   0    qta qoa qaa   0;
+      0   0   0   0      0   0   0   0    qtb   0   0 qbb];
+
+% state covariance matrix
+gv = gyroscope.UserData.variance;
+gV = gv.^2;
+P = [
+      2   0   0   0      0   0   0   0      0   0   0   0;
+      0 gv(1) 0   0      0   0   0   0      0   0   0   0;
+      0   0 gV(1) 0      0   0   0   0      0   0   0   0;
+      0   0   0  .1      0   0   0   0      0   0   0   0;
+
+      0   0   0   0      2   0   0   0      0   0   0   0;
+      0   0   0   0      0 gv(2) 0   0      0   0   0   0;
+      0   0   0   0      0   0 gV(2) 0      0   0   0   0;
+      0   0   0   0      0   0   0  .1      0   0   0   0;
+
+      0   0   0   0      0   0   0   0      2   0   0   0;
+      0   0   0   0      0   0   0   0      0 gv(3) 0   0;
+      0   0   0   0      0   0   0   0      0   0 gV(3) 0;
+      0   0   0   0      0   0   0   0      0   0   0  .1];
+   
+B = eye(size(P));
    
 % Lambda coefficient for artificial increase of covariance
 lambda = .99;
@@ -111,31 +136,28 @@ for i=1:N
    
     % state matrix
     A = [
-         1 0 0    T 0 0     0.5*T^2 0 0   -T 0 0;
-         0 1 0    0 T 0     0 0.5*T^2 0    0 -T 0;
-         0 0 1    0 0 T     0 0 0.5*T^2    0 0 -T;
+         1 T 0.5*T^2 -T,     0 0       0  0,      0 0       0  0;
+         0 1       T  0,     0 0       0  0,      0 0       0  0;
+         0 0       1  0,     0 0       0  0,      0 0       0  0;
+         0 0       0  1,     0 0       0  0,      0 0       0  0;
          
-         0 0 0    1 0 0     T 0 0    0 0 0;
-         0 0 0    0 1 0     0 T 0    0 0 0;
-         0 0 0    0 0 1     0 0 T    0 0 0;
-         
-         0 0 0    0 0 0     1 0 0    0 0 0;
-         0 0 0    0 0 0     0 1 0    0 0 0;
-         0 0 0    0 0 0     0 0 1    0 0 0;
-         
-         0 0 0    0 0 0    0 0 0     1 0 0;
-         0 0 0    0 0 0    0 0 0     0 1 0;
-         0 0 0    0 0 0    0 0 0     0 0 1];
+         0 0       0  0,     1 T 0.5*T^2 -T,      0 0       0  0;
+         0 0       0  0,     0 1       T  0,      0 0       0  0;
+         0 0       0  0,     0 0       1  0,      0 0       0  0;
+         0 0       0  0,     0 0       0  1,      0 0       0  0;
+     
+         0 0       0  0,     0 0       0  0,      1 T 0.5*T^2 -T;
+         0 0       0  0,     0 0       0  0,      0 1       T  0;
+         0 0       0  0,     0 0       0  0,      0 0       1  0;
+         0 0       0  0,     0 0       0  0,      0 0       0  1];
     
     % Kalman Filter: Initial Prediction
     if i == 1       
         x(1) = yaw;       
-        x(2) = pitch;
-        x(3) = roll;
+        x(5) = pitch;
+        x(9) = roll;
     end
       
-    % Kalman Filter: Predict
-    [x, P] = kf_predict(x, A, P, lambda, Q);
     
     % Update process noise
     % Integrational errors propagate from acceleration to
@@ -156,27 +178,28 @@ for i=1:N
     
     qaa = (qc*T);        % var(theta)
     
+    qbb = (1/3*qc*T^3);  % var(bias)
+    
     Q = [
-   qtt   0   0  qto   0   0   qta   0   0   qtb   0   0;
-     0 qtt   0    0 qto   0     0 qta   0     0 qtb   0;
-     0   0 qtt    0   0 qto     0   0 qta     0   0 qtb;
+        qtt qto qta qtb      0   0   0   0      0   0   0   0;
+        qto qoo qoa   0      0   0   0   0      0   0   0   0;
+        qta qoa qaa   0      0   0   0   0      0   0   0   0;
+        qtb   0   0 qbb      0   0   0   0      0   0   0   0;
 
-   qto   0   0  qoo   0   0   qoa   0   0     0   0   0;
-     0 qto   0    0 qoo   0     0 qoa   0     0   0   0;
-     0   0 qto    0   0 qoo     0   0 qoa     0   0   0;
+          0   0   0   0    qtt qto qta qtb      0   0   0   0;
+          0   0   0   0    qto qoo qoa   0      0   0   0   0;
+          0   0   0   0    qta qoa qaa   0      0   0   0   0;
+          0   0   0   0    qtb   0   0 qbb      0   0   0   0;
 
-   qta   0   0  qoa   0   0   qaa   0   0     0   0   0;
-     0 qta   0    0 qoa   0     0 qaa   0     0   0   0;
-     0   0 qta    0   0 qoa     0   0 qaa     0   0   0;
-     
-   qtb   0   0    0   0   0     0   0   0   .01   0   0;
-     0 qtb   0    0   0   0     0   0   0     0 .01   0;
-     0   0 qtb    0   0   0     0   0   0     0   0 .01];
-     
-    if i == 1
-        P = Q;
-    end
- 
+          0   0   0   0      0   0   0   0    qtt qto qta qtb;
+          0   0   0   0      0   0   0   0    qto qoo qoa   0;
+          0   0   0   0      0   0   0   0    qta qoa qaa   0;
+          0   0   0   0      0   0   0   0    qtb   0   0 qbb];
+      
+    
+    % Kalman Filter: Predict
+    [x, P] = kf_predict(x, A, P, lambda, Q);
+    
     % Axis R base value
     RA = 45;
     SwitchThreshold = 0;
@@ -184,12 +207,13 @@ for i=1:N
     
     if abs(pitch) > SwitchThreshold
 
+        %{
         % measurement transformation matrix
         H = [
-             0 1 0 0 0 0 0 0 0 0 0 0;
-             0 0 0 1 0 0 0 0 0 0 0 0;
              0 0 0 0 1 0 0 0 0 0 0 0;
-             0 0 0 0 0 1 0 0 0 0 0 0];
+             0 1 0 0 0 0 0 0 0 0 0 0;
+             0 0 0 0 0 1 0 0 0 0 0 0;
+             0 0 0 0 0 0 0 0 0 1 0 0];
 
         % measurement noise matrix
         R = [
@@ -207,16 +231,36 @@ for i=1:N
              ypr_gyro_current(1);
              ypr_gyro_current(2);
              ypr_gyro_current(3)];
+%}        
+        
+        % measurement transformation matrix
+        H = [
+             0 1 0 0 0 0 0 0 0 0 0 0;
+             0 0 0 0 0 1 0 0 0 0 0 0;
+             0 0 0 0 0 0 0 0 0 1 0 0];
+
+        % measurement noise matrix
+        R = [
+            gv(1)   0   0;
+             0   gv(2)  0;
+             0   0   gv(3)];
+
+        % Measurement vector
+        z = [
+             ypr_gyro_current(1);
+             ypr_gyro_current(2);
+             ypr_gyro_current(3)];
+        
     else
         
         % measurement transformation matrix
         H = [
              1 0 0 0 0 0 0 0 0 0 0 0;
-             0 1 0 0 0 0 0 0 0 0 0 0;
-             0 0 1 0 0 0 0 0 0 0 0 0;
-             0 0 0 1 0 0 0 0 0 0 0 0;
              0 0 0 0 1 0 0 0 0 0 0 0;
-             0 0 0 0 0 1 0 0 0 0 0 0];
+             0 0 0 0 0 0 0 0 1 0 0 0;
+             0 1 0 0 0 0 0 0 0 0 0 0;
+             0 0 0 0 0 1 0 0 0 0 0 0;
+             0 0 0 0 0 0 0 0 0 1 0 0];
 
         s = ((abs(pitch)+1)/(SwitchThreshold+1))^2 * SwitchScale + RA;
         c = ((abs(pitch)+1)/(SwitchThreshold+1))^2 * SwitchScale;
@@ -245,8 +289,8 @@ for i=1:N
     [x, P] = kf_update(x, z, P, H, R);
        
     % store state
-    ypr_kf(i, :)    = [x(1)  x(2)  x(3)];
-    omega_kf(i, :)  = [x(4), x(5), x(6)];
+    ypr_kf(i, :)    = [x(1)  x(5)  x(9)];
+    omega_kf(i, :)  = [x(2), x(6), x(10)];
      
     waitbar(i/N, hwb);
 end
