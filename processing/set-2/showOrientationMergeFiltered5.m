@@ -1,9 +1,9 @@
 clear all; home;
 
 %% Load the data
-%dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'roll-and-tilt-at-45-90');
+dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'roll-and-tilt-at-45-90');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'unmoved-with-x-pointing-forward');
-dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-forward');
+%dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-forward');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-y-pointing-left');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-up');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-z-pointing-up');
@@ -80,20 +80,46 @@ for i=1:N
     % but yields better results to to smaller error.
     %qpitch2 =  atan2d(zbase(1), zbase(2)^2+zbase(3)^2);
     
+    % This gives a good reading for pitch with full +/- 180°
+    % (denominator can be negative).
+    % It gives readings that are off by 180° if roll is grater than 90° or
+    % smaller than -90°.
+    % Estimated roll may be used to correct for this.
+    qpitch3  = atan2d(-zbase(1), sign(zbase(3))*sqrt(zbase(2)^2+zbase(3)^2)) - 180;
+    
     % Roll angle from accelerometer works okay except when in pitch
     % singularity, but mirrors at 90° (only measures +/- 90° angle)
-    qroll2  = -atan2d(zbase(2), sqrt(zbase(1)^2+zbase(3)^2));
-    
+    %qroll2  = -atan2d(zbase(2), sqrt(zbase(1)^2+zbase(3)^2));
+   
     % Note that the square root does not need to be taken
     % but yields better results to to smaller error.
     %qroll2  = -atan2d(zbase(2), zbase(1)^2+zbase(3)^2);
     
+     % This gives a good reading for roll with full +/- 180°
+    % (denominator can be negative).
+    % It gives readings that are off by 180° if roll is greater than 90° or
+    % smaller than -90°.
+    % Estimated roll may be used to correct for this.
+    qroll2  =  atan2d(zbase(2), sign(zbase(3))*sqrt(zbase(1)^2+zbase(3)^2)) + 180;
+    
     % Yaw angle from accelerometer is basically useless even under
     % non-singular orientations
     qyaw2   =  atan2d(zbase(3), sqrt(zbase(1)^2+zbase(2)^2));
-    %qyaw2   =  atan2d(zbase(3), zbase(1)^2+zbase(2)^2);
+
+    % if yaw > 0 AND pitch < -90° or pitch > 90°, correct roll by -180°
+    % see: rotate-ccw-around-y-pointing-left
+    if qyaw2 > 0 && (qpitch3 > 90 || qpitch3 < -90)
+        qroll2 = qroll2 - 180;
+    end
+
+    % if roll < -90° or roll > 90°, correct pitch by +180°
+    % see: rotate-ccw-around-x-pointing-forward
+    if qyaw2 > 0 && (qroll2 > 90 || qroll2 < -90)
+        qpitch3 = - qpitch3 - 180;
+    end
     
-    % They can be used however to correct the mirroring effect
+    %{
+    % It might be used however to correct the mirroring effect
     % of the roll angle.
     if qyaw2 > 0
         qroll2 = -qroll2 + 180;
@@ -103,9 +129,10 @@ for i=1:N
             qroll2 = qroll2 - 360
         end
     end
+    %}
     
     %current_ypr
-    ypr2(i, :) = [qyaw2, qpitch2, qroll2];
+    ypr2(i, :) = [qyaw2, qpitch3, qroll2];
     
     % store state
     ypr_kf(i, :)    = [x(1)  x(2)  x(3)];
