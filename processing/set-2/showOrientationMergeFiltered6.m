@@ -46,7 +46,7 @@ x = [0, ... % yaw   angles
 T = .1;
 
 %qc = 0.166^2;
-qc = 90^2;
+qc = 20^2;
 
 qtt = (1/20*qc*T^5); % cov(theta, theta)
 qto = (1/8*qc*T^4);  % cov(theta, omega)
@@ -167,18 +167,19 @@ for i=1:N
     %      Antonio Filieri, Rossella Melchiotti
     
     %qc = 0.166^2;
+    dT = T*2;
     
-    qtt = (1/20*qc*T^5); % cov(theta, theta)
-    qto = (1/8*qc*T^4);  % cov(theta, omega)
-    qtb = (1/8*qc*T^4);  % cov(theta, omega)
-    qta = (1/6*qc*T^3);  % cov(theta, alpha)
+    qtt = (1/20*qc*dT^5); % cov(theta, theta)
+    qto = (1/8*qc*dT^4);  % cov(theta, omega)
+    qtb = (1/8*qc*dT^4);  % cov(theta, omega)
+    qta = (1/6*qc*dT^3);  % cov(theta, alpha)
     
-    qoo = (1/3*qc*T^3);  % var(omega)
-    qoa = (1/2*qc*T^2);  % cov(theta, alpha)
+    qoo = (1/3*qc*dT^3);  % var(omega)
+    qoa = (1/2*qc*dT^2);  % cov(theta, alpha)
     
-    qaa = (qc*T);        % var(theta)
+    qaa = (qc*dT);        % var(theta)
     
-    qbb = (1/3*qc*T^3);  % var(bias)
+    qbb = (1/3*qc*dT^3);  % var(bias)
     
     Q = [
         qtt qto qta qtb      0   0   0   0      0   0   0   0;
@@ -199,8 +200,7 @@ for i=1:N
     
     % Kalman Filter: Predict
     [x, P] = kf_predict(x, A, P, lambda, Q);
-    
-       
+           
     % Apply constraints to the estimated state
     if yaw < -160 && x(1) > 160
         x(1) = x(1) - 360;
@@ -229,7 +229,7 @@ for i=1:N
              0 0 0 0 0 0 0 0 0 1 0 0];
 
         % Set variance in angle measurements
-        Rp = 4^2; % 5 degree error
+        Rp = 5; % degree error
          
         % measurement noise matrix
         R = [
@@ -282,9 +282,9 @@ for i=1:N
              0 0 0 0 0 0 0 0 0 1 0 0];
 
         % Set variance in angle measurements
-        Rp = 10^2; % 5 degree error
-        Ry =  4^2; % 5 degree error
-        Rr = 10^2; % 5 degree error
+        Ry = 35;   % degree error
+        Rp =  5; % degree error
+        Rr = 35; % degree error
         
         % measurement noise matrix
         R = [
