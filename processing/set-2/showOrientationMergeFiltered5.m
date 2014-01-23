@@ -1,9 +1,9 @@
 clear all; home;
 
 %% Load the data
-dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'roll-and-tilt-at-45-90');
+%dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'roll-and-tilt-at-45-90');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'unmoved-with-x-pointing-forward');
-%dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-forward');
+dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-forward');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-y-pointing-left');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-up');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-z-pointing-up');
@@ -106,30 +106,37 @@ for i=1:N
     % non-singular orientations
     qyaw2   =  atan2d(zbase(3), sqrt(zbase(1)^2+zbase(2)^2));
 
-    % if yaw > 0 AND pitch < -90° or pitch > 90°, correct roll by -180°
-    % see: rotate-ccw-around-y-pointing-left
-    if qyaw2 > 0 && (qpitch3 > 90 || qpitch3 < -90)
-        qroll2 = qroll2 - 180;
-    end
+    if qyaw2 > 0 
+        if (qpitch3 > 90 || qpitch3 < -90) && (qroll2 > 90 || qroll2 < -90)
+            
+            % Note that this usually means pitch = +/- 90°,
+            % so no value for roll can be given.
+            
+            % The estimated roll can be used to check for this constraint.
+            if (qroll2 < 160 || qroll2 > 200) && (qroll2 > -160 || qroll2 < -200)
+                qpitch3 = 180 - qpitch3;
+            end
+            
+            qroll2 = qroll2 - 180;
+        else
+            % if yaw > 0 AND pitch < -90° or pitch > 90°, correct roll by -180°
+            % see: rotate-ccw-around-y-pointing-left
+            if (qpitch3 > 90 || qpitch3 < -90)
+                qroll2 = qroll2 - 180;
+            end
 
-    % if roll < -90° or roll > 90°, correct pitch by +180°
-    % see: rotate-ccw-around-x-pointing-forward
-    if qyaw2 > 0 && (qroll2 > 90 || qroll2 < -90)
-        qpitch3 = - qpitch3 - 180;
-    end
-    
-    %{
-    % It might be used however to correct the mirroring effect
-    % of the roll angle.
-    if qyaw2 > 0
-        qroll2 = -qroll2 + 180;
-        
-        % wrap around at 360°
-        if qroll2 > 180
-            qroll2 = qroll2 - 360
+            % if roll < -90° or roll > 90°, correct pitch by +180°
+            % see: rotate-ccw-around-x-pointing-forward
+            %if qyaw2 > 0 && (qroll2 > 90 || qroll2 < -90)
+            if (qroll2 > 90 || qroll2 < -90)
+                qpitch3 = qpitch3 - 180;
+            end    
         end
     end
-    %}
+     
+    if qpitch3 > 180
+        qpitch3 = qpitch3 - 360;
+    end
     
     %current_ypr
     ypr2(i, :) = [qyaw2, qpitch3, qroll2];
