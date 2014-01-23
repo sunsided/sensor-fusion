@@ -2,9 +2,9 @@ clear all; home;
 
 %% Load the data
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'roll-and-tilt-at-45-90');
-%dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'unmoved-with-x-pointing-forward');
+dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'unmoved-with-x-pointing-forward');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-forward');
-dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-y-pointing-left');
+%dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-y-pointing-left');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-up');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-z-pointing-up');
 [accelerometer, gyroscope, compass, ~] = loadData(dataSetFolder, true);
@@ -137,9 +137,45 @@ for i=1:N
     % Kalman Filter: Predict
     [x, P] = kf_predict(x, A, P, lambda, Q);
     
+    % Update process noise
+    % Integrational errors propagate from acceleration to
+    % velocity and from velocity to position.
+    
+    % see: Position Recovery from Accelerometric Sensors 
+    %      Antonio Filieri, Rossella Melchiotti
+    
+    qc = 0.166^2;
+    
+    qtt = (1/20*qc*T^5); % cov(theta, theta)
+    qto = (1/8*qc*T^4);  % cov(theta, omega)
+    qtb = (1/8*qc*T^4);  % cov(theta, omega)
+    qta = (1/6*qc*T^3);  % cov(theta, alpha)
+    
+    qoo = (1/3*qc*T^3);  % var(omega)
+    qoa = (1/2*qc*T^2);  % cov(theta, alpha)
+    
+    qaa = (qc*T);        % var(theta)
+    
+    Q = [
+   qtt   0   0  qto   0   0   qta   0   0   qtb   0   0;
+     0 qtt   0    0 qto   0     0 qta   0     0 qtb   0;
+     0   0 qtt    0   0 qto     0   0 qta     0   0 qtb;
+
+   qto   0   0  qoo   0   0   qoa   0   0     0   0   0;
+     0 qto   0    0 qoo   0     0 qoa   0     0   0   0;
+     0   0 qto    0   0 qoo     0   0 qoa     0   0   0;
+
+   qta   0   0  qoa   0   0   qaa   0   0     0   0   0;
+     0 qta   0    0 qoa   0     0 qaa   0     0   0   0;
+     0   0 qta    0   0 qoa     0   0 qaa     0   0   0;
+     
+   qtb   0   0    0   0   0     0   0   0   .01   0   0;
+     0 qtb   0    0   0   0     0   0   0     0 .01   0;
+     0   0 qtb    0   0   0     0   0   0     0   0 .01];
+     
     % Axis R base value
     RA = 45;
-    SwitchThreshold = 45;
+    SwitchThreshold = 0;
     SwitchScale = 1;
     
     if abs(pitch) > SwitchThreshold
