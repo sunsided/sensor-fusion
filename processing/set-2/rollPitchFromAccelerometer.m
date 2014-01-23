@@ -29,5 +29,18 @@ function [roll, pitch, roll_error] = rollPitchFromAccelerometer(accelerometer, m
     % This is an alternate was of computing pitch, as per
     % http://cache.freescale.com/files/sensors/doc/app_note/AN4248.pdf
     %pitch = -atan2d(zbase(1), zbase(2)*sind(qroll2) + zbase(3)*cosd(qroll2));
+       
+    % Use this fix is applied to prevent the 180° roll angle inversion
+    % when pitch would be becoming smaller than -90° or larger than 90°.
+    % (See integrated gyroscope readings for the effect.)
+    % Note, however, that the uncorrected value is the true reading, 
+    % since havinga pitch angle lower than -90° or larger than 90° 
+    % results in the inverse position, i.e. flipped roll and heading.
+    % (To make it clear: Inverting would be required for Yaw, too!)
+    %{
+    if zbase(3) < 0
+       roll = roll - 180;
+    end
+    %}    
     
 end
