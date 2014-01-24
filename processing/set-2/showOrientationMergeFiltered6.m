@@ -45,6 +45,12 @@ x = [0, ... % yaw   angles
 % Estimated cycle time
 T = .1;
 
+% see: "Position Recovery from Accelerometric Sensors"
+%       Antonio Filieri, Rossella Melchiotti
+% see: "Error Reduction Techniques for a MEMS Accelerometer-based Digital
+%       Input Device" (Appendix B)
+%       Tsang Chi Chiu
+
 %qc = 0.166^2;
 qc = 20^2;
 
@@ -162,9 +168,6 @@ for i=1:N
     % Update process noise
     % Integrational errors propagate from acceleration to
     % velocity and from velocity to position.
-    
-    % see: Position Recovery from Accelerometric Sensors 
-    %      Antonio Filieri, Rossella Melchiotti
     
     %qc = 0.166^2;
     dT = T*2;
