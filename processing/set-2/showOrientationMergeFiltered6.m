@@ -123,7 +123,10 @@ for i=1:N
     a = acceleration.Data(i, :);
     m = compass.Data(i, :);
     
-    [yaw, pitch, roll, DCM, coordinateSystem, ~] = yawPitchRoll(a, m);
+    %[yaw, pitch, roll, DCM, coordinateSystem, ~] = yawPitchRoll(a, m);
+    
+    [roll, pitch, roll_error] = rollPitchFromAccelerometer(a, 0.01);
+    [yaw] = yawFromMagnetometer(m, roll, pitch);
     
     current_ypr = [yaw, pitch, roll];
     ypr(i,:) = current_ypr;
@@ -170,7 +173,8 @@ for i=1:N
     % velocity and from velocity to position.
     
     %qc = 0.166^2;
-    dT = T*2;
+    %dT = T*2;
+    dT = T;
     
     qtt = (1/20*qc*dT^5); % cov(theta, theta)
     qto = (1/8*qc*dT^4);  % cov(theta, omega)
@@ -205,6 +209,7 @@ for i=1:N
     [x, P] = kf_predict(x, A, P, lambda, Q);
            
     % Apply constraints to the estimated state
+    %{
     if yaw < -160 && x(1) > 160
         x(1) = x(1) - 360;
     elseif yaw > 160 && x(1) < -160
@@ -215,14 +220,22 @@ for i=1:N
         x(9) = x(9) - 360;
     elseif roll > 160 && x(9) < -160
         x(9) = x(9) + 360;
-    end    
+    end
+    %}
     
     % Note that roll and yaw estimation is still very bad in this approach
     % when pitch angle goes up to +/- ~40°
     
+    % Detect sign for gyro integration of roll and yaw.
+    direction = 1;
+    if a(3) > 0
+        direction = -1;
+    end
+    
     % Pitch threshold to avoid yaw and roll measurements
-    SwitchThreshold = 45;
-    if abs(pitch) > SwitchThreshold
+    % when in singularity
+    SwitchThreshold = 0.1;
+    if roll_error > SwitchThreshold
 
         % measurement transformation matrix
         H = [
@@ -247,9 +260,9 @@ for i=1:N
         % Measurement vector
         z = [
              pitch;
-             ypr_gyro_current(1);
+             ypr_gyro_current(1) * direction;
              ypr_gyro_current(2);
-             ypr_gyro_current(3)];
+             ypr_gyro_current(3) * direction];
         
         % The next block prevents measuring angles altogether
          
@@ -298,14 +311,38 @@ for i=1:N
             0   0   0   0   gv(2)  0;
             0   0   0   0   0   gv(3)];
 
+        % Fix angles
+        if a(3) > 0
+            yaw = yaw + 180;
+            roll = roll - 180;
+            
+            while yaw > 180
+                yaw = yaw - 360;
+            end
+            
+            while yaw < -180
+                yaw = yaw + 360;
+            end
+            
+            while roll > 180
+                roll = roll - 360;
+            end
+            
+            while roll < -180
+                roll = roll + 360;
+            end
+        end
+        
         % Measurement vector
         z = [
              yaw;
              pitch;
              roll;
-             ypr_gyro_current(1);
+             ypr_gyro_current(1) * direction;
+             %ypr_gyro_current(1);
              ypr_gyro_current(2);
-             ypr_gyro_current(3)];        
+             ypr_gyro_current(3) * direction];
+             %ypr_gyro_current(3)];
      
     end
 
