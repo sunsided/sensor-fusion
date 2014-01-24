@@ -7,7 +7,7 @@ function [roll, pitch, roll_error] = rollPitchFromAccelerometer(accelerometer, m
     % Find roll from accelerometer
     roll_unstable  = atan2d(zbase(2), zbase(3));
 
-    if ~isset('mu', 'var')
+    if ~exist('mu', 'var')
         mu = 0.01;
     end
         
