@@ -68,7 +68,7 @@ for i=1:N
     % fetch RPY from accelerometer and magnetometer
     a = acceleration.Data(i, :);
     m = magnetometer.Data(i, :);
-    g = [gyroscope.Data(i, 3) -gyroscope.Data(i, 2) -gyroscope.Data(i, 1)];
+    g = [-gyroscope.Data(i, 1) -gyroscope.Data(i, 2) gyroscope.Data(i, 3)];
         
     % get time derivative
     T = 0.1;
@@ -106,7 +106,7 @@ for i=1:N
          0 0 0,     0 0 0];
     
     % Process noise
-    q_rp = .001;
+    q_rp = .1;
     Q_rp = [0 0 0,  0 0 0;
          0 0 0,  0 0 0;
          0 0 0,  0 0 0;
@@ -179,18 +179,15 @@ for i=1:N
       
     % Measurement vector
     z_rp = [-a(1);
-         -a(2);
-         -a(3);
-          g(1);
-          g(2);
-          g(3)];    
+            -a(2);
+            -a(3);
+            degtorad(g(1));
+            degtorad(g(2));
+            degtorad(g(3))];
 
     % Kalman Filter: Measurement Update
-    [x_rp, dP_rp] = kf_update(x_rp, z_rp, P_rp, H_rp, R_rp);
-            
-    % integrate state
-    P_rp = P_rp + dP_rp*T;
-    
+    [x_rp, P_rp] = kf_update(x_rp, z_rp, P_rp, H_rp, R_rp);
+        
     % Fetch estimated state matrix elements
     % and renormalize them
     n = norm(x_rp(1:3));
@@ -207,11 +204,11 @@ for i=1:N
     % tilt-compensate magnetometer and fetch estimated 
     % yaw angle sine and cosine.
     
-    Xh_y = m(1)*cosd(pitchY) + m(2)*sind(pitchY)*sind(rollX) + m(3)*sind(pitchY)*cosd(rollX);
-    Yh_y = m(2)*cosd(rollX) - m(3)*sind(rollX);
+    Xh = m(1)*cosd(pitchY) + m(2)*sind(pitchY)*sind(rollX) + m(3)*sind(pitchY)*cosd(rollX);
+    Yh =                     m(2)*cosd(rollX)              - m(3)*sind(rollX);
     
-    yaw_sin = Yh_y / sqrt(Xh_y^2 + Yh_y^2);
-    yaw_cos = Xh_y / sqrt(Xh_y^2 + Yh_y^2);
+    yaw_sin = Yh / sqrt(Xh^2 + Yh^2);
+    yaw_cos = Xh / sqrt(Xh^2 + Yh^2);
     
      % Initialize state
     if i == 1       
@@ -238,7 +235,7 @@ for i=1:N
            0 0 0,     0 0 0];
     
     % Process noise
-    q_y = .001;
+    q_y = .1;
     Q_y = [0 0 0,  0 0 0;
            0 0 0,  0 0 0;
            0 0 0,  0 0 0;
@@ -249,12 +246,12 @@ for i=1:N
     
      if i == 1
          P_y = [5 0 0,  0 0 0;
-              0 5 0,  0 0 0;
-              0 0 5,  0 0 0;
-
-              0 0 0,  1 0 0;
-              0 0 0,  0 1 0;
-              0 0 0,  0 0 1];
+                0 5 0,  0 0 0;
+                0 0 5,  0 0 0;
+  
+                0 0 0,  1 0 0;
+                0 0 0,  0 1 0;
+                0 0 0,  0 0 1];
      end
      
     % Kalman Filter: Predict
@@ -285,17 +282,17 @@ for i=1:N
     
     mu = 0.01;
    
-    rmx =  beta * mv(1);
-    rmy =  beta * mv(2);
-    rmz =  beta * mv(3);
+    rgx =  beta * gv(1);
+    rgy =  beta * gv(2);
+    rgz =  beta * gv(3);
     
     R_y =  [mu 0  0,   0  0  0;
             0 mu  0,   0  0  0;
             0  0 mu,   0  0  0;
           
-            0  0  0,  rmx 0  0;
-            0  0  0,   0 rmy 0;
-            0  0  0,   0  0 rmz];
+            0  0  0,  rgx 0  0;
+            0  0  0,   0 rgy 0;
+            0  0  0,   0  0 rgz];
      
     % Measurement matrix
     H_y = [1 0 0,  0 0 0;
@@ -310,16 +307,13 @@ for i=1:N
     z_y = [cosd(pitchY)*yaw_sin;
            cosd(rollX)*yaw_cos + sind(rollX)*sind(pitchY)*yaw_sin;
           -sind(rollX)*yaw_cos + cosd(rollX)*sind(pitchY)*yaw_sin;
-           m(1);
-           m(2);
-           m(3)];    
+           degtorad(g(1));
+           degtorad(g(2));
+           degtorad(g(3))]; 
 
     % Kalman Filter: Measurement Update
-    [x_y, dP_y] = kf_update(x_y, z_y, P_y, H_y, R_y);
-            
-    % integrate state
-    P_y = P_y + dP_y*T;
-    
+    [x_y, P_y] = kf_update(x_y, z_y, P_y, H_y, R_y);
+        
     % Fetch estimated state matrix elements
     % and renormalize them
     n = norm(x_y(1:3));
