@@ -83,9 +83,9 @@ for i=1:N
     % Initialize state
     if i == 1       
         % Elements for the state matrix
-        C31 =  a(1);
-        C32 =  a(2);
-        C33 =  a(3);
+        C31 = -a(1);
+        C32 = -a(2);
+        C33 = -a(3);
         
         x_rp(1) = C31;
         x_rp(2) = C32;
