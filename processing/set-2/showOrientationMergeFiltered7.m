@@ -55,10 +55,10 @@ lambda_y  = 1;
 %% Get roll, pitch and yaw
 hwb = waitbar(0, 'Calculating states ...');
 
-ypr = zeros(N, 3);
-ypr2 = zeros(N, 3);
-ypr_kf = zeros(N, 3);
-ypr_gyro = zeros(N, 3);
+rpy = zeros(N, 3);
+rpy2 = zeros(N, 3);
+rpy_kf = zeros(N, 3);
+rpy_gyro = zeros(N, 3);
 omega_kf = zeros(N, 3);
 
 oldDCM = zeros(3);
@@ -75,7 +75,7 @@ for i=1:N
     ypr_gyro_current = [0 0 0];
     if i > 1
         T = gyroscope.Time(i) - gyroscope.Time(i-1);
-        ypr_gyro(i, :) = ypr_gyro(i-1, :) + g * T;
+        rpy_gyro(i, :) = rpy_gyro(i-1, :) + g * T;
     end       
     
     %% Estimate DCM; Correct roll and pitch angle
@@ -331,10 +331,10 @@ for i=1:N
     yawZ = atan2d(-C21, C11);
     
     %% Extract angles for fun and glory   
-    ypr(i,:) = [yawZ, pitchY, rollX];
+    rpy(i,:) = [yawZ, pitchY, rollX];
     
     % store state
-    ypr_kf(i, :)    = [NaN, NaN, NaN];
+    rpy_kf(i, :)    = [NaN, NaN, NaN];
     omega_kf(i, :)  = [NaN, NaN, NaN];
      
     waitbar(i/N, hwb);
@@ -342,9 +342,9 @@ end
 close(hwb);
 
 % clamp angles to -180..180
-ypr2 = clampangle(ypr2);
-ypr_gyro = clampangle(ypr_gyro);
-ypr_kf = clampangle(ypr_kf);
+rpy2 = clampangle(rpy2);
+rpy_gyro = clampangle(rpy_gyro);
+rpy_kf = clampangle(rpy_kf);
 
 
 %% Plot data
@@ -379,7 +379,7 @@ axisRpy(1) = subplot(3, 3, 1, ...
     );
 
 t = time;
-roll = ypr(:, 3);
+roll = rpy(:, 3);
 line(t, roll, ...
     'Parent', axisRpy(1), ...
     'LineStyle', 'none', ...
@@ -410,7 +410,7 @@ axisRpy(2) = subplot(3, 3, 4, ...
     );
 
 t = time;
-pitch = ypr(:, 2);
+pitch = rpy(:, 2);
 line(t, pitch, ...
     'Parent', axisRpy(2), ...
     'LineStyle', 'none', ...
@@ -441,7 +441,7 @@ axisRpy(3) = subplot(3, 3, 7, ...
     );
 
 t = time;
-yaw = ypr(:, 1);
+yaw = rpy(:, 1);
 line(t, yaw, ...
     'Parent', axisRpy(3), ...
     'LineStyle', 'none', ...
@@ -473,7 +473,7 @@ axisRpy(4) = subplot(3, 3, 2, ...
     );
 
 t = time;
-roll = ypr_gyro(:, 3);
+roll = rpy_gyro(:, 1);
 line(t, roll, ...
     'Parent', axisRpy(4), ...
     'LineStyle', 'none', ...
@@ -482,7 +482,7 @@ line(t, roll, ...
     'Color', lineColor(4, :) ...
     );  
 hold on;
-roll = ypr_kf(:, 3);
+roll = rpy_kf(:, 3);
 line(t, roll, ...
     'Parent', axisRpy(4), ...
     'LineStyle', 'none', ...
@@ -513,7 +513,7 @@ axisRpy(5) = subplot(3, 3, 5, ...
     );
 
 t = time;
-pitch = ypr_gyro(:, 2);
+pitch = rpy_gyro(:, 2);
 line(t, pitch, ...
     'Parent', axisRpy(5), ...
     'LineStyle', 'none', ...
@@ -522,7 +522,7 @@ line(t, pitch, ...
     'Color', lineColor(5, :) ...
     ); 
 hold on;
-pitch = ypr_kf(:, 2);
+pitch = rpy_kf(:, 2);
 line(t, pitch, ...
     'Parent', axisRpy(5), ...
     'LineStyle', 'none', ...
@@ -553,7 +553,7 @@ axisRpy(6) = subplot(3, 3, 8, ...
     );
 
 t = time;
-yaw = ypr_gyro(:, 1);
+yaw = rpy_gyro(:, 3);
 line(t, yaw, ...
     'Parent', axisRpy(6), ...
     'LineStyle', 'none', ...
@@ -562,7 +562,7 @@ line(t, yaw, ...
     'Color', lineColor(6, :) ...
     ); 
 hold on;
-yaw = ypr_kf(:, 1);
+yaw = rpy_kf(:, 1);
 line(t, yaw, ...
     'Parent', axisRpy(6), ...
     'LineStyle', 'none', ...
