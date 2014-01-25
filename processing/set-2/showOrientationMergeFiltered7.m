@@ -1,3 +1,10 @@
+% This approach estimates the direction cosine matrix directly
+% within the Kalman filter.
+%
+% See: "A DCM Based Orientation Estimation Algorithm with an
+%       Inertial Measurement Unit and a Magnetic Compass"
+%       Nguyen Ho Quoc Phuong, Hee-Jun Kang, Young-Soo Suh, Young-Sik Ro
+
 clear all; home;
 
 %% Load the data
@@ -70,15 +77,14 @@ for i=1:N
     if i > 1
         T = gyroscope.Time(i) - gyroscope.Time(i-1);
         ypr_gyro(i, :) = ypr_gyro(i-1, :) + g * T;
-    end
-       
+    end       
+    
     % Initialize state
-    if i == 1
-        
+    if i == 1       
         % Elements for the state matrix
-        C31 = -a(1);
-        C32 = -a(2);
-        C33 = -a(3);
+        C31 =  a(1);
+        C32 =  a(2);
+        C33 =  a(3);
         
         x(1) = C31;
         x(2) = C32;
@@ -87,9 +93,6 @@ for i=1:N
         x(4) = g(1);
         x(5) = g(2);
         x(6) = g(3);
-        
-        P = ones(6, 6);
-        
     end
         
     % State matrix
@@ -102,7 +105,7 @@ for i=1:N
          0 0 0,     0 0 0];
     
     % Process noise
-    q = .1;
+    q = 1;
     Q = [0 0 0,  0 0 0;
          0 0 0,  0 0 0;
          0 0 0,  0 0 0;
@@ -111,26 +114,30 @@ for i=1:N
          0 0 0,  0 q 0;
          0 0 0,  0 0 q];
     
+     if i == 1
+         P = [5 0 0,  0 0 0;
+              0 5 0,  0 0 0;
+              0 0 1,  0 0 0;
+
+              0 0 0,  1 0 0;
+              0 0 0,  0 1 0;
+              0 0 0,  0 0 1];
+     end
+     
     % Kalman Filter: Predict
-    [x, P] = kf_predict(x, A, P, lambda, Q);
+    [dx, dP] = kf_predict(x, A, P, lambda, Q);
 
     % integrate state
-    C31 = C31 + x(1);
-    C32 = C32 + x(2);
-    C33 = C33 + x(3);
+    x = x + dx*T;
+    P = P + dP*T;
     
     % Fetch estimated state matrix elements
     % and renormalize them
-    n = norm([C31 C32 C33]);
-    C31 = C31/n;
-    C32 = C32/n;
-    C33 = C33/n;    
-    
-    % Re-set state
-    x(1) = C31;
-    x(2) = C32;
-    x(3) = C33;
-    
+    n = norm(x(1:3));
+    C31 = x(1)/n;
+    C32 = x(2)/n;
+    C33 = x(3)/n;    
+            
     % Rebuild state matrix with normalized elements
     A = [0 0 0,     0 -C33  C32;
          0 0 0,   C33    0 -C31;
@@ -138,18 +145,27 @@ for i=1:N
          
          0 0 0,     0 0 0;
          0 0 0,     0 0 0;
-         0 0 0,     0 0 0];    
+         0 0 0,     0 0 0];  
     
     % Measurement noise
-    ra = .1;
-    rg = .1;
-    R = [ra  0  0,   0  0  0;
-          0 ra  0,   0  0  0;
-          0  0 ra,   0  0  0;
+    alpha = 0.0001;
+    beta  = 0.1;
+    
+    rax = 1/alpha * av(1);
+    ray = 1/alpha * av(2);
+    raz = 1/alpha * av(3);
+    
+    rgx =  beta * gv(1);
+    rgy =  beta * gv(2);
+    rgz =  beta * gv(3);
+    
+    R = [rax 0  0,   0  0  0;
+          0 ray 0,   0  0  0;
+          0  0 raz,  0  0  0;
           
-          0  0  0,  rg  0  0;
-          0  0  0,   0 rg  0;
-          0  0  0,   0  0 rg];
+          0  0  0,  rgx 0  0;
+          0  0  0,   0 rgy 0;
+          0  0  0,   0  0 rgz];
      
     % Measurement matrix
     H = [1 0 0,  0 0 0;
@@ -169,36 +185,24 @@ for i=1:N
           g(3)];    
 
     % Kalman Filter: Measurement Update
-    [x, P] = kf_update(x, z, P, H, R);
-    
+    [x, dP] = kf_update(x, z, P, H, R);
+            
     % integrate state
-    C31 = C31 + x(1);
-    C32 = C32 + x(2);
-    C33 = C33 + x(3);
+    P = P + dP*T;
     
     % Fetch estimated state matrix elements
     % and renormalize them
-    n = norm([C31 C32 C33]);
-    C31 = C31/n;
-    C32 = C32/n;
-    C33 = C33/n;    
-    
-    % Re-set state
-    x(1) = C31;
-    x(2) = C32;
-    x(3) = C33;
-    
-    % Extract angles
-    DCM(3,1) = C31;
-    DCM(3,2) = C32;
-    DCM(3,3) = C33;
-    
-    % extract angles
-    % see: William Premerlani, "Computing Euler Angles from Direction Cosines"
-    pitchY = -asind(DCM(1, 3));
-    rollX  = atan2d(DCM(2, 3), DCM(3, 3));
-    yawZ   = atan2d(DCM(1, 2), DCM(1, 1));
+    n = norm(x(1:3));
+    C31 = x(1)/n;
+    C32 = x(2)/n;
+    C33 = x(3)/n;    
 
+    % calculate roll and pitch angles  
+    pitchY = -asind(C31);
+    rollX  = atan2d(C32, C33);
+    %yawZ   = atan2d(DCM(1, 2), DCM(1, 1));
+    yawZ = NaN;
+    
     ypr(i,:) = [yawZ, pitchY, rollX];
     
     % store state
