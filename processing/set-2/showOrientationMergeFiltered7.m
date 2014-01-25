@@ -8,10 +8,10 @@
 clear all; home;
 
 %% Load the data
-dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'roll-and-tilt-at-45-90');
+%dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'roll-and-tilt-at-45-90');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'unmoved-with-x-pointing-forward');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-forward');
-%dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-y-pointing-left');
+dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-y-pointing-left');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-up');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-z-pointing-up');
 [accelerometer, gyroscope, magnetometer, ~] = loadData(dataSetFolder, true);
@@ -66,7 +66,7 @@ ypr_base = [0 0 0];
 
 for i=1:N
     % fetch RPY from accelerometer and magnetometer
-    a = acceleration.Data(i, :);
+    a = -acceleration.Data(i, :);
     m = magnetometer.Data(i, :);
     g = [-gyroscope.Data(i, 1) -gyroscope.Data(i, 2) gyroscope.Data(i, 3)];
         
@@ -83,9 +83,9 @@ for i=1:N
     % Initialize state
     if i == 1       
         % Elements for the state matrix
-        C31 = -a(1);
-        C32 = -a(2);
-        C33 = -a(3);
+        C31 =  a(1);
+        C32 =  a(2);
+        C33 =  a(3);
         
         x_rp(1) = C31;
         x_rp(2) = C32;
@@ -178,9 +178,9 @@ for i=1:N
          0 0 0,  0 0 1];
       
     % Measurement vector
-    z_rp = [-a(1);
-            -a(2);
-            -a(3);
+    z_rp = [ a(1);
+             a(2);
+             a(3);
             degtorad(g(1));
             degtorad(g(2));
             degtorad(g(3))];
@@ -197,7 +197,8 @@ for i=1:N
 
     % calculate roll and pitch angles  
     pitchY = -asind(C31);
-    rollX  = atan2d(C32, C33);
+    %rollX  = atan2d(C32, C33);
+    rollX  = atan2d(C32, sign(C33)*sqrt(C31^2 + C33^2));
     
     %% Estimate DCM; Correct yaw angle
     
@@ -328,7 +329,7 @@ for i=1:N
     C13 = C1(3);
     
     % Calculate yaw angle
-    yawZ = atan2d(-C21, C11);
+    yawZ = -atan2d(C21, C11);
     
     %% Extract angles for fun and glory   
     rpy(i,:) = [yawZ, pitchY, rollX];

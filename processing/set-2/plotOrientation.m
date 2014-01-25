@@ -6,7 +6,7 @@ function plotOrientation(DCM, an, mn)
     coordinateSystem = DCM;
     
     % prepare rotation matrices
-    R = DCM;
+    R = DCM';
 
     % prepare vertices
     vertices = [ 0.75  0     0.02;

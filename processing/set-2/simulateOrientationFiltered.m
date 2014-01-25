@@ -1,15 +1,12 @@
 clear all; close all; clc; home;
 
-% define the data set folder
-%dataSetFolder = '../../data/set-1/unmoved-x-pointing-forward';
-%dataSetFolder = '../../data/set-1/unmoved-x-pointing-up';
-%dataSetFolder = '../../data/set-1/tilt-around-x-pointing-forward';
-%dataSetFolder = '../../data/set-1/rotate-360ccw-around-z-pointing-up';
-%dataSetFolder = '../../data/set-1/rotate-360ccw-around-x-pointing-forward';
-
 %% Load the data
+%dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'roll-and-tilt-at-45-90');
+%dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'unmoved-with-x-pointing-forward');
+%dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-forward');
+%dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-y-pointing-left');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-up');
-dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'roll-and-tilt-at-45-90');
+dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-z-pointing-up');
 [accelerometer, gyroscope, magnetometer, temperature] = loadData(dataSetFolder, true);
 
 % resample the time series
@@ -54,7 +51,7 @@ N = accelerometer.Length;
 for n=1:n_step:N
 
     % fetch RPY from accelerometer and magnetometer
-    a = accelerometer.Data(n, :);
+    a = -accelerometer.Data(n, :);
     m = magnetometer.Data(n, :);
     g = [-gyroscope.Data(n, 1) -gyroscope.Data(n, 2) gyroscope.Data(n, 3)];
     
@@ -76,9 +73,9 @@ for n=1:n_step:N
     % Initialize state
     if n == 1       
         % Elements for the state matrix
-        C31 = -a(1);
-        C32 = -a(2);
-        C33 = -a(3);
+        C31 = a(1);
+        C32 = a(2);
+        C33 = a(3);
         
         x_rp(1) = C31;
         x_rp(2) = C32;
@@ -99,7 +96,7 @@ for n=1:n_step:N
          0 0 0,     0 0 0];
     
     % Process noise
-    q_rp = .1;
+    q_rp = 1;
     Q_rp = [0 0 0,  0 0 0;
          0 0 0,  0 0 0;
          0 0 0,  0 0 0;
@@ -143,7 +140,7 @@ for n=1:n_step:N
      
     % Measurement noise
     alpha = 1000;
-    beta  = 1;
+    beta  = .1;
     
     rax = alpha * av(1);
     ray = alpha * av(2);
@@ -171,9 +168,9 @@ for n=1:n_step:N
          0 0 0,  0 0 1];
       
     % Measurement vector
-    z_rp = [-a(1);
-            -a(2);
-            -a(3);
+    z_rp = [ a(1);
+             a(2);
+             a(3);
              degtorad(g(1));
              degtorad(g(2));
              degtorad(g(3))];
@@ -190,7 +187,8 @@ for n=1:n_step:N
 
     % calculate roll and pitch angles  
     pitchY = -asind(C31);
-    rollX  = atan2d(C32, C33);
+    %rollX  = atan2d(C32, C33);
+    rollX  = atan2d(C32, sign(C33)*sqrt(C31^2 + C33^2));
     
     %% Estimate DCM; Correct yaw angle
     
@@ -228,7 +226,7 @@ for n=1:n_step:N
            0 0 0,     0 0 0];
     
     % Process noise
-    q_y = .1;
+    q_y = 1;
     Q_y = [0 0 0,  0 0 0;
            0 0 0,  0 0 0;
            0 0 0,  0 0 0;
@@ -271,9 +269,9 @@ for n=1:n_step:N
            0 0 0,     0 0 0];
     
     % Measurement noise
-    beta  = 1;
+    beta  = .1;
     
-    mu = 0.01;
+    mu = 2;
    
     rgx =  beta * gv(1);
     rgy =  beta * gv(2);
@@ -321,7 +319,7 @@ for n=1:n_step:N
     C13 = C1(3);
     
     % Calculate yaw angle
-    yawZ = atan2d(-C21, C11);
+    yawZ = -atan2d(C21, C11);
     
     %% Build the DCM
     
@@ -330,5 +328,5 @@ for n=1:n_step:N
            C31 C32 C33]';
     
     %% plot the orientation
-    plotOrientation(DCM, a, m);
+    plotOrientation(DCM, -a, m);
 end
