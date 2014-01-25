@@ -1,6 +1,9 @@
-function plotOrientation(DCM, coordinateSystem, an, mn)
+function plotOrientation(DCM, an, mn)
 
     global coordSysPlotHandle orientationPlotHandle
+    
+    % coordinate system and DCM are actually the same
+    coordinateSystem = DCM;
     
     % prepare rotation matrices
     R = DCM;

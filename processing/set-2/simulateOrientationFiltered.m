@@ -124,9 +124,10 @@ for n=1:n_step:N
     mn = m/norm(m);
     
     % Debugging
-    msg = sprintf('acc: %+1.3f %+1.3f %+1.3f mag: %+1.3f %+1.3f %+1.3f', ... 
+    %{
+    fprintf('acc: %+1.3f %+1.3f %+1.3f mag: %+1.3f %+1.3f %+1.3f\n', ... 
                     a(1), a(2), a(3), m(1), m(2), m(3));
-    disp(msg);
+    %}
     
     
     % Fetch rotation
@@ -217,5 +218,5 @@ for n=1:n_step:N
     [x, P] = kf_predict(x, A, P, lambda);
     
     % plot the orientation
-    plotOrientation(DCM, coordinateSystem, an, mn);
+    plotOrientation(DCM, an, mn);
 end
