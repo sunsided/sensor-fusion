@@ -14,10 +14,10 @@ dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-y-pointing-left');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-x-pointing-up');
 %dataSetFolder = fullfile(fileparts(which(mfilename)), '..' , '..', 'data', 'set-2', 'rotate-ccw-around-z-pointing-up');
-[accelerometer, gyroscope, compass, ~] = loadData(dataSetFolder, true);
+[accelerometer, gyroscope, magnetometer, ~] = loadData(dataSetFolder, true);
 
 % resample the time series
-[acceleration, gyroscope, compass] = lerpTimeSeries(accelerometer, gyroscope, compass);
+[acceleration, gyroscope, magnetometer] = lerpTimeSeries(accelerometer, gyroscope, magnetometer);
 
 % extract time vector
 time = acceleration.Time;
@@ -29,23 +29,28 @@ time = time(1:N);
 %% Prepare the Kalman filter
 
 % state vector
-x = [0, ...     % C(3,1) of DCM
+x_rp = [0, ...  % C(3,1) of DCM
      0, ...     % C(3,2) of DCM
      0, ...     % C(3,3) of DCM
      0, ...     % omega_x
      0, ...     % omega_y
      0]';       % omega_z
 
+x_y = [0, ...   % C(2,1) of DCM
+     0, ...     % C(2,2) of DCM
+     0, ...     % C(2,3) of DCM
+     0, ...     % mag_x
+     0, ...     % mag_y
+     0]';       % mag_z
+ 
 % Fetch variances
 gv = gyroscope.UserData.variance;
 av = accelerometer.UserData.variance;
-  
-% state covariance matrix
-P = [];
-B = eye(size(P));
+mv = magnetometer.UserData.variance;
    
-% Lambda coefficient for artificial increase of covariance
-lambda = 1;
+% Lambda coefficient for artificial increase of uncertainty
+lambda_rp = 1;
+lambda_y  = 1;
 
 %% Get roll, pitch and yaw
 hwb = waitbar(0, 'Calculating states ...');
@@ -62,15 +67,9 @@ ypr_base = [0 0 0];
 for i=1:N
     % fetch RPY from accelerometer and magnetometer
     a = acceleration.Data(i, :);
-    m = compass.Data(i, :);
+    m = magnetometer.Data(i, :);
     g = [gyroscope.Data(i, 3) -gyroscope.Data(i, 2) -gyroscope.Data(i, 1)];
         
-    % fetch DCM from readings
-    [~, ~, ~, DCM] = yawPitchRoll(a, m);
-    
-    % Turn around
-    DCM = DCM';
-    
     % get time derivative
     T = 0.1;
     ypr_gyro_current = [0 0 0];
@@ -79,6 +78,8 @@ for i=1:N
         ypr_gyro(i, :) = ypr_gyro(i-1, :) + g * T;
     end       
     
+    %% Estimate DCM; Correct roll and pitch angle
+    
     % Initialize state
     if i == 1       
         % Elements for the state matrix
@@ -86,17 +87,17 @@ for i=1:N
         C32 =  a(2);
         C33 =  a(3);
         
-        x(1) = C31;
-        x(2) = C32;
-        x(3) = C33;
+        x_rp(1) = C31;
+        x_rp(2) = C32;
+        x_rp(3) = C33;
         
-        x(4) = g(1);
-        x(5) = g(2);
-        x(6) = g(3);
+        x_rp(4) = g(1);
+        x_rp(5) = g(2);
+        x_rp(6) = g(3);
     end
         
     % State matrix
-    A = [0 0 0,     0 -C33  C32;
+    A_rp = [0 0 0,     0 -C33  C32;
          0 0 0,   C33    0 -C31;
          0 0 0,  -C32  C31    0;
          
@@ -105,19 +106,19 @@ for i=1:N
          0 0 0,     0 0 0];
     
     % Process noise
-    q = 1;
-    Q = [0 0 0,  0 0 0;
+    q_rp = .001;
+    Q_rp = [0 0 0,  0 0 0;
          0 0 0,  0 0 0;
          0 0 0,  0 0 0;
 
-         0 0 0,  q 0 0;
-         0 0 0,  0 q 0;
-         0 0 0,  0 0 q];
+         0 0 0,  q_rp 0 0;
+         0 0 0,  0 q_rp 0;
+         0 0 0,  0 0 q_rp];
     
      if i == 1
-         P = [5 0 0,  0 0 0;
+         P_rp = [5 0 0,  0 0 0;
               0 5 0,  0 0 0;
-              0 0 1,  0 0 0;
+              0 0 5,  0 0 0;
 
               0 0 0,  1 0 0;
               0 0 0,  0 1 0;
@@ -125,21 +126,21 @@ for i=1:N
      end
      
     % Kalman Filter: Predict
-    [dx, dP] = kf_predict(x, A, P, lambda, Q);
+    [dx_rp, dP_rp] = kf_predict(x_rp, A_rp, P_rp, lambda_rp, Q_rp);
 
     % integrate state
-    x = x + dx*T;
-    P = P + dP*T;
+    x_rp = x_rp + dx_rp*T;
+    P_rp = P_rp + dP_rp*T;
     
     % Fetch estimated state matrix elements
     % and renormalize them
-    n = norm(x(1:3));
-    C31 = x(1)/n;
-    C32 = x(2)/n;
-    C33 = x(3)/n;    
+    n = norm(x_rp(1:3));
+    C31 = x_rp(1)/n;
+    C32 = x_rp(2)/n;
+    C33 = x_rp(3)/n;    
             
     % Rebuild state matrix with normalized elements
-    A = [0 0 0,     0 -C33  C32;
+    A_rp = [0 0 0,     0 -C33  C32;
          0 0 0,   C33    0 -C31;
          0 0 0,  -C32  C31    0;
          
@@ -148,27 +149,27 @@ for i=1:N
          0 0 0,     0 0 0];  
     
     % Measurement noise
-    alpha = 0.0001;
-    beta  = 0.1;
+    alpha = 1000;
+    beta  = 1;
     
-    rax = 1/alpha * av(1);
-    ray = 1/alpha * av(2);
-    raz = 1/alpha * av(3);
+    rax = alpha * av(1);
+    ray = alpha * av(2);
+    raz = alpha * av(3);
     
     rgx =  beta * gv(1);
     rgy =  beta * gv(2);
     rgz =  beta * gv(3);
     
-    R = [rax 0  0,   0  0  0;
+    R_rp = [rax 0  0,   0  0  0;
           0 ray 0,   0  0  0;
-          0  0 raz,  0  0  0;
+          0 0 raz,  0  0  0;
           
           0  0  0,  rgx 0  0;
           0  0  0,   0 rgy 0;
           0  0  0,   0  0 rgz];
      
     % Measurement matrix
-    H = [1 0 0,  0 0 0;
+    H_rp = [1 0 0,  0 0 0;
          0 1 0,  0 0 0;
          0 0 1,  0 0 0;
         
@@ -177,7 +178,7 @@ for i=1:N
          0 0 0,  0 0 1];
       
     % Measurement vector
-    z = [-a(1);
+    z_rp = [-a(1);
          -a(2);
          -a(3);
           g(1);
@@ -185,24 +186,157 @@ for i=1:N
           g(3)];    
 
     % Kalman Filter: Measurement Update
-    [x, dP] = kf_update(x, z, P, H, R);
+    [x_rp, dP_rp] = kf_update(x_rp, z_rp, P_rp, H_rp, R_rp);
             
     % integrate state
-    P = P + dP*T;
+    P_rp = P_rp + dP_rp*T;
     
     % Fetch estimated state matrix elements
     % and renormalize them
-    n = norm(x(1:3));
-    C31 = x(1)/n;
-    C32 = x(2)/n;
-    C33 = x(3)/n;    
+    n = norm(x_rp(1:3));
+    C31 = x_rp(1)/n;
+    C32 = x_rp(2)/n;
+    C33 = x_rp(3)/n;
 
     % calculate roll and pitch angles  
     pitchY = -asind(C31);
     rollX  = atan2d(C32, C33);
-    %yawZ   = atan2d(DCM(1, 2), DCM(1, 1));
-    yawZ = NaN;
     
+    %% Estimate DCM; Correct yaw angle
+    
+    % tilt-compensate magnetometer and fetch estimated 
+    % yaw angle sine and cosine.
+    
+    Xh_y = m(1)*cosd(pitchY) + m(2)*sind(pitchY)*sind(rollX) + m(3)*sind(pitchY)*cosd(rollX);
+    Yh_y = m(2)*cosd(rollX) - m(3)*sind(rollX);
+    
+    yaw_sin = Yh_y / sqrt(Xh_y^2 + Yh_y^2);
+    yaw_cos = Xh_y / sqrt(Xh_y^2 + Yh_y^2);
+    
+     % Initialize state
+    if i == 1       
+        C21 =  m(1);
+        C22 =  m(2);
+        C23 =  m(3);
+        
+        x_y(1) = C21;
+        x_y(2) = C22;
+        x_y(3) = C23;
+        
+        x_y(4) = m(1);
+        x_y(5) = m(2);
+        x_y(6) = m(3);
+    end
+    
+    % State matrix
+    A_y = [0 0 0,   0   -C23  C22;
+           0 0 0,   C23    0 -C21;
+           0 0 0,  -C22  C21    0;
+         
+           0 0 0,     0 0 0;
+           0 0 0,     0 0 0;
+           0 0 0,     0 0 0];
+    
+    % Process noise
+    q_y = .001;
+    Q_y = [0 0 0,  0 0 0;
+           0 0 0,  0 0 0;
+           0 0 0,  0 0 0;
+
+           0 0 0,  q_y 0 0;
+           0 0 0,  0 q_y 0;
+           0 0 0,  0 0 q_y];
+    
+     if i == 1
+         P_y = [5 0 0,  0 0 0;
+              0 5 0,  0 0 0;
+              0 0 5,  0 0 0;
+
+              0 0 0,  1 0 0;
+              0 0 0,  0 1 0;
+              0 0 0,  0 0 1];
+     end
+     
+    % Kalman Filter: Predict
+    [dx_y, dP_y] = kf_predict(x_y, A_y, P_y, lambda_y, Q_y);
+
+    % integrate state
+    x_y = x_y + dx_y*T;
+    P_y = P_y + dP_y*T;
+    
+    % Fetch estimated state matrix elements
+    % and renormalize them
+    n = norm(x_y(1:3));
+    C21 = x_y(1)/n;
+    C22 = x_y(2)/n;
+    C23 = x_y(3)/n;    
+            
+    % Rebuild state matrix with normalized elements
+    A_y = [0 0 0,   0   -C23  C22;
+           0 0 0,   C23    0 -C21;
+           0 0 0,  -C22  C21    0;
+         
+           0 0 0,     0 0 0;
+           0 0 0,     0 0 0;
+           0 0 0,     0 0 0];
+    
+    % Measurement noise
+    beta  = 1;
+    
+    mu = 0.01;
+   
+    rmx =  beta * mv(1);
+    rmy =  beta * mv(2);
+    rmz =  beta * mv(3);
+    
+    R_y =  [mu 0  0,   0  0  0;
+            0 mu  0,   0  0  0;
+            0  0 mu,   0  0  0;
+          
+            0  0  0,  rmx 0  0;
+            0  0  0,   0 rmy 0;
+            0  0  0,   0  0 rmz];
+     
+    % Measurement matrix
+    H_y = [1 0 0,  0 0 0;
+           0 1 0,  0 0 0;
+           0 0 1,  0 0 0;
+        
+           0 0 0,  1 0 0;
+           0 0 0,  0 1 0;
+           0 0 0,  0 0 1];
+      
+    % Measurement vector
+    z_y = [cosd(pitchY)*yaw_sin;
+           cosd(rollX)*yaw_cos + sind(rollX)*sind(pitchY)*yaw_sin;
+          -sind(rollX)*yaw_cos + cosd(rollX)*sind(pitchY)*yaw_sin;
+           m(1);
+           m(2);
+           m(3)];    
+
+    % Kalman Filter: Measurement Update
+    [x_y, dP_y] = kf_update(x_y, z_y, P_y, H_y, R_y);
+            
+    % integrate state
+    P_y = P_y + dP_y*T;
+    
+    % Fetch estimated state matrix elements
+    % and renormalize them
+    n = norm(x_y(1:3));
+    C21 = x_y(1)/n;
+    C22 = x_y(2)/n;
+    C23 = x_y(3)/n;
+       
+    % Recreate remaining DCM row
+    C1 = cross([C21 C22 C23], [C31 C32 C33]);
+    C11 = C1(1);
+    C12 = C1(2);
+    C13 = C1(3);
+    
+    % Calculate yaw angle
+    yawZ = atan2d(-C21, C11);
+    
+    %% Extract angles for fun and glory   
     ypr(i,:) = [yawZ, pitchY, rollX];
     
     % store state
