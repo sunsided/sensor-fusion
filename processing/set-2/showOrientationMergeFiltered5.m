@@ -89,6 +89,8 @@ for i=1:N
     end  
 
     % Fetch base vectors.
+    mbase = m / norm(m);
+    
     % Invert acceleration to measure up instead of gravity.
     zbase = -a / norm(a);
 
@@ -107,9 +109,9 @@ for i=1:N
     % Use this fix is applied to prevent the 180° roll angle inversion
     % when pitch would be becoming smaller than -90° or larger than 90°.
     % (See integrated gyroscope readings for the effect.)
-    % The uncorrected value is the true reading, however, since having
-    % a pitch angle lower than -90° or larger than 90° results in the
-    % inverse position, i.e. flipped roll and heading.
+    % Note, however, that the uncorrected value is the true reading, 
+    % since havinga pitch angle lower than -90° or larger than 90° 
+    % results in the inverse position, i.e. flipped roll and heading.
     %{
     if zbase(3) < 0
        qroll2_stable = qroll2_stable - 180;
@@ -117,19 +119,36 @@ for i=1:N
     end
     %}
     
+    % Select flavor.
+    qroll2 = qroll2_stable;
+    
     % Calculate error of roll angle to unstable, exact value
     roll_error = qroll2_stable - qroll2_unstable;
-    
-    qyaw2 = roll_error;
-        
+            
     % Note that Pitch is defined to be [-90° .. 90°]
     %
     % We are negating here because of the inverted sign
     % of the accelerometer reading
     qpitch2 = -atan2d(zbase(1), sqrt(zbase(2)^2 + zbase(3)^2));
+    
+    % This is an alternate was of computing pitch, as per
+    % http://cache.freescale.com/files/sensors/doc/app_note/AN4248.pdf
+    %qpitch2 = -atan2d(zbase(1), zbase(2)*sind(qroll2) + zbase(3)*cosd(qroll2));
         
+    % Compensate magnetometer reading for pitch and roll
+    % see: https://gist.github.com/timtrueman/322555
+    
+    comp_x = mbase(1) * cosd(qpitch2) ...
+           + mbase(2) * sind(qroll2) * sind(qpitch2) ...
+           + mbase(3) * cosd(qroll2) * sind(qpitch2);
+    
+    comp_y = mbase(2) * cosd(qroll2) ...
+           - mbase(3) * sind(qroll2);
+           
+    qyaw2 = atan2d(-comp_y, comp_x);
+    
     %current_ypr
-    ypr2(i, :) = [qyaw2, qpitch2, qroll2_stable];
+    ypr2(i, :) = [roll_error, qpitch2, qroll2];
     
     % store state
     ypr_kf(i, :)    = [x(1)  x(2)  x(3)];
