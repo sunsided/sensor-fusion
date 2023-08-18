@@ -9,9 +9,9 @@ filtering the raw inputs to smoothen the estimation.
 
 ![](processing/set-1/readme/screenshot.png)
 
-The MATLAB experiments were later factored into an on-device pose orientation
+The MATLAB code was later factored into an on-device pose orientation estimation
 on a Freescale FRDM-KL25Z board, the code of which can be found
-in the [frdm-kl25z-marg-fusion](https://github.com/sunsided/frdm-kl25z-marg-fusion) repo. 
+in the [frdm-kl25z-marg-fusion](https://github.com/sunsided/frdm-kl25z-marg-fusion) repo.
 Here, two of the eigenvectors of the direction cosine matrix are estimated directly on the device using a regular (i.e., non-extended, non-unscented) Kalman filter with TRIAD.
 A video recording of the outcome can be found on YouTube:
 
