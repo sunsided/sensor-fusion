@@ -1,5 +1,4 @@
-sensor data set #1
-==================
+# Sensor data set #1
 
 This is the first data set. These measurements suffer from various problems:
 
@@ -9,24 +8,26 @@ This is the first data set. These measurements suffer from various problems:
 
 Even though all these glitches may be corrected in software, another data set was created to make testing easier.
 
-### InvenSense MPU6050 ###
+For processing, see [../../processing/set-1](../../processing/set-1).
 
-#### Speed ####
+### InvenSense MPU6050
+
+#### Speed
 
 - measured at 100Hz
 
-#### Type ####
+#### Type
 
 - Accelerometer
 - Gyroscope
 - Temperature
 
-### Honeywell HMC5883L ###
+### Honeywell HMC5883L
 
-#### Speed ####
+#### Speed
 
 - measured at 75Hz
 
-#### Type ####
+#### Type
 
 - Magnetometer
