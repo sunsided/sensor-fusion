@@ -1,26 +1,25 @@
-sensor data set #2
-==================
+# Sensor data set #2
 
 In all measurements the sensors were aligned to gravity and north as much as possible.
 
-### InvenSense MPU6050 ###
+### InvenSense MPU6050
 
-#### Speed ####
+#### Speed
 
 - measured at 100Hz
 
-#### Type ####
+#### Type
 
 - Accelerometer
 - Gyroscope
 - Temperature
 
-### Honeywell HMC5883L ###
+### Honeywell HMC5883L
 
-#### Speed ####
+#### Speed
 
 - measured at 75Hz
 
-#### Type ####
+#### Type
 
 - Magnetometer
