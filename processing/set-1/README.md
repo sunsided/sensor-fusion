@@ -3,7 +3,7 @@
 See [set-1 description](../../data/set-1/README.md) for detailed information
 about the data set.
 
-![Screenshot](readme/screenshot.png)
+![Animation](readme/set1.webp)
 
 To run the simulation, execute
 
@@ -11,4 +11,4 @@ To run the simulation, execute
 simulateOrientation
 ```
 
-![Animation](readme/set1.webp)
+![Screenshot](readme/screenshot.png)
