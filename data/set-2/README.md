@@ -10,6 +10,21 @@ Right-handed coordinate system with:
 - **Y:** left direction
 - **Z:** up direction
 
+### Sensor orientation
+
+- **Accelerometer:**
+  - **X:** forward (same as reference)
+  - **Y:** left (same as reference)
+  - **Z:** up (same as reference)
+- **Magnetometer:**
+  - **X:** ...
+  - **Y:** ...
+  - **Z:** up (same as reference)
+- **Gyroscope:**
+  - **X:** positive is clockwise, **negative is counter-clockwise** - flipped sign
+  - **Y:** **positive is counter-clockwise**, negative is clockwise
+  - **Z:** **positive is counter-clockwise**, negative is clockwise
+
 ### Example readings
 
 #### X forward, Y left, Z up
