@@ -26,3 +26,26 @@ These are measurements of a **rotation around the y axis** with the **y axis poi
 #### Speed ####
 
 - measured at 75Hz
+
+## Data Overview
+
+### Data exports
+
+The raw data is available in CSV and Parquet formats:
+
+- [`mpu6050.csv`](mpu6050.csv) and [`mpu6050.parquet`](mpu6050.parquet)
+- [`hmc5833l.csv`](mpu6050.csv) and [`hmc5833l.parquet`](mpu6050.parquet)
+
+### Sensor Readings
+
+See [`sensor-stats.csv`](sensor-stats.csv) for summary statistics in tabular form. Below is a visualization of the sensor readings:
+
+![Sensor Readings](sensor-readings.png)
+
+See also [`sensor-readings-fine.png`](sensor-readings-fine.png).
+
+### Sensor Covariances
+
+See [`sensor-covariances.csv`](sensor-covariances.csv) for the covariance matrix in tabular form. Below is a visualization as a heatmap:
+
+![Sensor Covariances](sensor-covariances.png)

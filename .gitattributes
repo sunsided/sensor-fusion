@@ -1,2 +1,6 @@
 *.csv filter=lfs diff=lfs merge=lfs -text
 *.parquet filter=lfs diff=lfs merge=lfs -text
+
+# Excure statistics CSVs since they are small enough.
+**/sensor-covariances.csv filter=
+**/sensor-stats.csv filter=
