@@ -1,7 +1,10 @@
-sensor data
-===========
+# sensor data
 
-These are measurements of a **rotating system** where a rotation around the center point is made. 
+See the dataset's [`README.md`](../README.md) for general information about data interpretation.
+
+---
+
+These are measurements of a **rotating system** where a rotation around the center point is made.
 
     Z
     |  Y
@@ -20,21 +23,21 @@ The rough order is:
 8. around Y'down
 9. around X'back
 
-### InvenSense MPU6050 ###
+### InvenSense MPU6050
 
 - Accelerometer
 - Gyroscope
 - Temperature
 
-#### Speed ####
+#### Speed
 
 - measured at 100Hz
 
-### Honeywell HMC5883L ###
+### Honeywell HMC5883L
 
 - Magnetometer
 
-#### Speed ####
+#### Speed
 
 - measured at 75Hz
 

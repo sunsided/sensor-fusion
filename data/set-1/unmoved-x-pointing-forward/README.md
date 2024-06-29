@@ -1,5 +1,8 @@
-sensor data
-===========
+# sensor data
+
+⚠️ See the dataset's [`README.md`](../README.md) for important information about data interpretation.
+
+---
 
 These are measurements of an **unmoved system** with the **x axis pointing forward**.
 
@@ -9,21 +12,21 @@ These are measurements of an **unmoved system** with the **x axis pointing forwa
     | /
     |/______X = fix, forward
 
-### InvenSense MPU6050 ###
+### InvenSense MPU6050
 
 - Accelerometer
 - Gyroscope
 - Temperature
 
-#### Speed ####
+#### Speed
 
 - measured at 100Hz
 
-### Honeywell HMC5883L ###
+### Honeywell HMC5883L
 
 - Magnetometer
 
-#### Speed ####
+#### Speed
 
 - measured at 75Hz
 

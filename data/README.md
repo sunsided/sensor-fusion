@@ -1,7 +1,6 @@
-sensor data sets
-================
+# sensor data sets
 
-### set 1 .. 2 ###
+### Sets 1 and 2
 
 - InvenSense MPU6050
 - Honeywell HMC5883L

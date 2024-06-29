@@ -1,5 +1,8 @@
-sensor data
-===========
+# sensor data
+
+See the dataset's [`README.md`](../README.md) for general information about data interpretation.
+
+---
 
 These are measurements of a two **counter-clockwise 360° rotations around the z axis** with the **z axis pointing up**.
 
@@ -9,21 +12,21 @@ These are measurements of a two **counter-clockwise 360° rotations around the z
     | /
     |/______X (forward)
 
-### InvenSense MPU6050 ###
+### InvenSense MPU6050
 
 - Accelerometer
 - Gyroscope
 - Temperature
 
-#### Speed ####
+#### Speed
 
 - measured at 100Hz
 
-### Honeywell HMC5883L ###
+### Honeywell HMC5883L
 
 - Magnetometer
 
-#### Speed ####
+#### Speed
 
 - measured at 75Hz
 

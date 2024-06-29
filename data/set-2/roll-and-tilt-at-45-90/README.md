@@ -1,5 +1,8 @@
-sensor data
-===========
+# sensor data
+
+See the dataset's [`README.md`](../README.md) for general information about data interpretation.
+
+---
 
 These are measurements of a **single rotation around z**, followed by **rotations around x** and **rotations around y** in local frame.
 
@@ -13,7 +16,7 @@ Starting from approximately 0° heading, the following sequence is given:
  - **pitch**: rotate around Y ~90° cw, ~180° ccw, ~90° cw
 - **heading**: rotate around Z~ 90 ccw (**back to heading ~0°**)
 
-The system is changed from approximately 0° heading to ~45°, rolled 90° ccw, 180° cw, 90° ccw around x, then tiltet  
+The system is changed from approximately 0° heading to ~45°, rolled 90° ccw, 180° cw, 90° ccw around x, then tiltet
 
     Z = fix, up
     |
@@ -21,21 +24,21 @@ The system is changed from approximately 0° heading to ~45°, rolled 90° ccw, 
     | /
     |/______X = roll/fix, forward
 
-### InvenSense MPU6050 ###
+### InvenSense MPU6050
 
 - Accelerometer
 - Gyroscope
 - Temperature
 
-#### Speed ####
+#### Speed
 
 - measured at 100Hz
 
-### Honeywell HMC5883L ###
+### Honeywell HMC5883L
 
 - Magnetometer
 
-#### Speed ####
+#### Speed
 
 - measured at 75Hz
 
