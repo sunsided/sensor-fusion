@@ -194,7 +194,7 @@ for i = 1:3  % Loop through x, y, z axes
     grid on;
     
     axisMin = min(min(accelBuffer(:, 2:end)));
-    axisMax = max(max(accelBuffer(:, 3:end)));
+    axisMax = max(max(accelBuffer(:, 2:end)));
     axisLimit = max(abs([axisMin, axisMax])) * 1.5;
     ylim([-axisLimit, axisLimit]);
 end
@@ -209,7 +209,7 @@ for i = 1:3  % Loop through x, y, z axes
     grid on;
     
     axisMin = min(min(gyroBuffer(:, 2:end)));
-    axisMax = max(max(gyroBuffer(:, 3:end)));
+    axisMax = max(max(gyroBuffer(:, 2:end)));
     axisLimit = max(abs([axisMin, axisMax])) * 1.5;
     ylim([-axisLimit, axisLimit]);
 end
@@ -224,7 +224,7 @@ for i = 1:3  % Loop through x, y, z axes
     grid on;
     
     axisMin = min(min(compassBuffer(:, 2:end)));
-    axisMax = max(max(compassBuffer(:, 3:end)));
+    axisMax = max(max(compassBuffer(:, 2:end)));
     axisLimit = max(abs([axisMin, axisMax])) * 1.5;
     ylim([-axisLimit, axisLimit]);
 end

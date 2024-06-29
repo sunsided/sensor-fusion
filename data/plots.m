@@ -21,7 +21,7 @@ figure;
 
 %% Accelerometer
 axisMin = min(min(accelBuffer(:, 2:end)));
-axisMax = max(max(accelBuffer(:, 3:end)));
+axisMax = max(max(accelBuffer(:, 2:end)));
 axisLimit = max(abs([axisMin, axisMax])) * 1.25;
 sizes = ones(size(accelBuffer(:, 1))) * 10;
 
@@ -77,7 +77,7 @@ ylim([-axisLimit, axisLimit]);
 
 %% Gyroscope
 axisMin = min(min(gyroBuffer(:, 2:end)));
-axisMax = max(max(gyroBuffer(:, 3:end)));
+axisMax = max(max(gyroBuffer(:, 2:end)));
 axisLimit = max(abs([axisMin, axisMax])) * 1.25;
 sizes = ones(size(gyroBuffer(:, 1))) * 10;
 
@@ -134,7 +134,7 @@ ylim([-axisLimit, axisLimit]);
 
 %% Magnetometer
 axisMin = min(min(compassBuffer(:, 2:end)));
-axisMax = max(max(compassBuffer(:, 3:end)));
+axisMax = max(max(compassBuffer(:, 2:end)));
 axisLimit = max(abs([axisMin, axisMax])) * 1.25;
 sizes = ones(size(compassBuffer(:, 1))) * 10;
 
@@ -195,4 +195,4 @@ sgtitle('Sensor Readings (3D)');
 set(gcf, 'Position', [100, 100, 1080, 940]);
 saveas(gcf, 'sensor-readings-3d.png');
 
-% close all;
+close all;
