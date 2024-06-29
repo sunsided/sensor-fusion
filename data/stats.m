@@ -9,6 +9,12 @@ load('mpu6050_accelerometer.mat');
 load('mpu6050_gyroscope.mat');
 load('mpu6050_temperature.mat');
 
+% Find and remove rows where all elements are zero
+accelBuffer(all(accelBuffer == 0, 2), :) = [];
+gyroBuffer(all(gyroBuffer == 0, 2), :) = [];
+temperatureBuffer(all(temperatureBuffer == 0, 2), :) = [];
+compassBuffer(all(compassBuffer == 0, 2), :) = [];
+
 %% Export statistics as CSV
 
 % Sampling rates.
