@@ -98,35 +98,35 @@ axes = ['T', ...
     'X', 'Y', 'Z'];
 
 dataCombined = [
-    temperatureStats, temperatureLinearity, temperatureTimeStats;
+    size(temperatureBuffer, 1), temperatureStats, temperatureLinearity, temperatureTimeStats;
 
-    accelXStats, accelXLinearity, accelTimeStats;
-    accelYStats, accelYLinearity, accelTimeStats;
-    accelZStats, accelZLinearity, accelTimeStats;
+    size(accelBuffer, 1), accelXStats, accelXLinearity, accelTimeStats;
+    size(accelBuffer, 1), accelYStats, accelYLinearity, accelTimeStats;
+    size(accelBuffer, 1), accelZStats, accelZLinearity, accelTimeStats;
     
-    gyroXStats, gyroXLinearity, gyroTimeStats;
-    gyroYStats, gyroYLinearity, gyroTimeStats;
-    gyroZStats, gyroZLinearity, gyroTimeStats;
+    size(gyroBuffer, 1), gyroXStats, gyroXLinearity, gyroTimeStats;
+    size(gyroBuffer, 1), gyroYStats, gyroYLinearity, gyroTimeStats;
+    size(gyroBuffer, 1), gyroZStats, gyroZLinearity, gyroTimeStats;
         
-    magnetometerXStats, magnetometerXLinearity, magnetometerTimeStats;
-    magnetometerYStats, magnetometerYLinearity, magnetometerTimeStats;
-    magnetometerZStats, magnetometerZLinearity, magnetometerTimeStats;
+    size(compassBuffer, 1), magnetometerXStats, magnetometerXLinearity, magnetometerTimeStats;
+    size(compassBuffer, 1), magnetometerYStats, magnetometerYLinearity, magnetometerTimeStats;
+    size(compassBuffer, 1), magnetometerZStats, magnetometerZLinearity, magnetometerTimeStats;
 ];
 
 T = array2table(dataCombined, 'VariableNames', {
     % 'sensor', 'type', 'axis', ...
-    'v_min', 'v_max', 'v_range', 'v_diff_mean', 'v_diff_std', 'v_mean', 'v_std_dev', ...
+    'count', 'v_min', 'v_max', 'v_range', 'v_diff_mean', 'v_diff_std', 'v_mean', 'v_std_dev', ...
     'linear_slope', 'linear_intercept', 'linear_RMSE', 'linear_R_squared', ...
     't_min', 't_max', 't_range', 'freq_mean', 'sample_rate_mean', 'sample_rate_std'
     });
 
 % Write CSV manually to control formatting
 fid = fopen('sensor-stats.csv', 'w');
-fprintf(fid, 'sensor,type,axis,v_min,v_max,v_range,v_diff_mean,v_diff_std,v_mean,v_std_dev,linear_slope,linear_intercept,linear_RMSE,linear_R_squared,t_min,t_max,t_range,freq_mean,sample_rate_mean,sample_rate_std\n');
+fprintf(fid, 'sensor,type,axis,count,v_min,v_max,v_range,v_diff_mean,v_diff_std,v_mean,v_std_dev,linear_slope,linear_intercept,linear_RMSE,linear_R_squared,t_min,t_max,t_range,freq_mean,sample_rate_mean,sample_rate_std\n');
 for row = 1:height(T)
-    fprintf(fid, '%s,%s,%s,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.2f,%.6g,%.6g\n', ...
+    fprintf(fid, '%s,%s,%s,%d,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.2f,%.6g,%.6g\n', ...
         sensors(:, row), sensorTypes(row), axes(row), ...
-        T.v_min(row), T.v_max(row), T.v_range(row), T.v_diff_mean(row), T.v_diff_std(row), T.v_mean(row), T.v_std_dev(row), ...
+        T.count(row), T.v_min(row), T.v_max(row), T.v_range(row), T.v_diff_mean(row), T.v_diff_std(row), T.v_mean(row), T.v_std_dev(row), ...
         T.linear_slope(row), T.linear_intercept(row), T.linear_RMSE(row), T.linear_R_squared(row), ...
         T.t_min(row), T.t_max(row), T.t_range(row), T.freq_mean(row), T.sample_rate_mean(row), T.sample_rate_std(row));
 end
@@ -140,6 +140,7 @@ readtable('sensor-stats.csv')
 % Interpolate and extrapolate HMC5833L data to match MPU6050 sampling rate.
 magnetometerInterp = interp1(compassBuffer(:, 1), compassBuffer(:, 2:end), accelBuffer(:, 1), 'previous');
 magnetometerInterp = fillmissing(magnetometerInterp, 'next');
+magnetometerInterp = fillmissing(magnetometerInterp, 'previous');
 
 % Calculate the covariance.
 sensorMatrix = [ temperatureBuffer(:, 2) accelBuffer(:, 2:end), gyroBuffer(:, 2:end), magnetometerInterp ];
