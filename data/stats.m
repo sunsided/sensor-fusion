@@ -1,3 +1,5 @@
+%% Load data
+
 clear
 clc
 
@@ -6,6 +8,8 @@ load('hmc5883l_compass.mat');
 load('mpu6050_accelerometer.mat');
 load('mpu6050_gyroscope.mat');
 load('mpu6050_temperature.mat');
+
+%% Export statistics as CSV
 
 % Sampling rates.
 [t_min, t_max, t_duration, sampling_frequency, sampling_rate, sampling_rate_std] = timeStats(accelBuffer);
@@ -130,6 +134,95 @@ fclose(fid);
 
 % Read it back for visualization.
 readtable('stats.csv')
+
+%% Covariances
+
+% Interpolate and extrapolate HMC5833L data to match MPU6050 sampling rate.
+magnetometerInterp = interp1(compassBuffer(:, 1), compassBuffer(:, 2:end), accelBuffer(:, 1), 'previous');
+magnetometerInterp = fillmissing(magnetometerInterp, 'next');
+
+% Calculate the covariance.
+sensorMatrix = [ temperatureBuffer(:, 2) accelBuffer(:, 2:end), gyroBuffer(:, 2:end), magnetometerInterp ];
+sensorMatrixNormalized = zscore(sensorMatrix);
+covarianceMatrix = cov(sensorMatrixNormalized);
+
+close all;
+
+figure;
+heatmap(covarianceMatrix, 'ColorLimits', [-1 1], 'Colormap', parula, ...
+    'XDisplayLabels', {'Temperature', 'Accelerometer X', 'Accelerometer Y', 'Accelerometer Z', 'Gyroscope X', 'Gyroscope Y', 'Gyroscope Y', 'Magnetometer X', 'Magnetometer Y', 'Magnetometer Z'}, ...
+    'YDisplayLabels', {'Temperature', 'Accelerometer X', 'Accelerometer Y', 'Accelerometer Z', 'Gyroscope X', 'Gyroscope Y', 'Gyroscope Y', 'Magnetometer X', 'Magnetometer Y', 'Magnetometer Z'});
+title('Sensor Covariance Heatmap');
+set(gcf, 'Position', [100, 100, 800, 600]);  % [left, bottom, width, height]
+saveas(gcf, 'sensor-covariances.png');
+
+%% Plot axes over time
+
+close all;
+
+figure;
+% Plot accelerometer data (row 1)
+for i = 1:3  % Loop through x, y, z axes
+    subplot(4, 3, i);  % Subplot for accelerometer
+    plot(accelBuffer(:, 1), accelBuffer(:, i + 1));
+    title(['Accelerometer Axis ' char('X' + i - 1)]);
+    xlabel('Time (s)');
+    ylabel('Acceleration (g)');  % 1g = 9.81 m/s^2
+    grid on;
+    
+    axisMin = min(min(accelBuffer(:, 2:end)));
+    axisMax = max(max(accelBuffer(:, 3:end)));
+    axisLimit = max(abs([axisMin, axisMax])) * 1.5;
+    ylim([-axisLimit, axisLimit]);
+end
+
+% Create figure for gyroscope plots (row 2)
+for i = 1:3  % Loop through x, y, z axes
+    subplot(4, 3, 3 + i);  % Subplot for gyroscope
+    plot(gyroBuffer(:, 1), gyroBuffer(:, i + 1));
+    title(['Gyroscope Axis ' char('X' + i - 1)]);
+    xlabel('Time (s)');
+    ylabel('Angular Velocity (rad/s)');
+    grid on;
+    
+    axisMin = min(min(gyroBuffer(:, 2:end)));
+    axisMax = max(max(gyroBuffer(:, 3:end)));
+    axisLimit = max(abs([axisMin, axisMax])) * 1.5;
+    ylim([-axisLimit, axisLimit]);
+end
+
+% Create figure for magnetometer plots (row 3)
+for i = 1:3  % Loop through x, y, z axes
+    subplot(4, 3, 6 + i);  % Subplot for gyroscope
+    plot(compassBuffer(:, 1), compassBuffer(:, i + 1));
+    title(['Magnetometer Axis ' char('X' + i - 1)]);
+    xlabel('Time (s)');
+    ylabel('Mag. Field Strength (mG)');  % milli-Gauss
+    grid on;
+    
+    axisMin = min(min(compassBuffer(:, 2:end)));
+    axisMax = max(max(compassBuffer(:, 3:end)));
+    axisLimit = max(abs([axisMin, axisMax])) * 1.5;
+    ylim([-axisLimit, axisLimit]);
+end
+
+subplot(4, 3, 10:12);  % Subplot for temperature
+plot(temperatureBuffer(:, 1), temperatureBuffer(:, 2));
+title('Temperature');
+xlabel('Time (s)');
+ylabel('Temeprature (°C)');
+grid on;
+
+% Adjust figure properties
+sgtitle('Sensor Readings');
+
+set(gcf, 'Position', [100, 100, 1920, 1080]);
+saveas(gcf, 'sensor-readings-fine.png');
+
+set(gcf, 'Position', [100, 100, 1080, 1080]);
+saveas(gcf, 'sensor-readings.png');
+
+%% Helper functions
 
 function [t_min, t_max, t_duration, sampling_frequency, sampling_rate, sampling_rate_std] = timeStats(buffer)
     t_min = buffer(1, 1);
