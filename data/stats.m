@@ -1,8 +1,6 @@
 clear
 clc
 
-format long g;
-
 % Fetch all data.
 load('hmc5883l_compass.mat');
 load('mpu6050_accelerometer.mat');
@@ -82,29 +80,56 @@ temperatureLinearity = [slope, intercept, RMSE, R_squared];
 clear slope intercept RMSE R_squared
 
 % Wrap the data into a table and export as CSV
+sensors = ["MPU6050", ...
+           'MPU6050', 'MPU6050', 'MPU6050', ...
+           'MPU6050', 'MPU6050', 'MPU6050', ...
+           'HMC5833L', 'HMC5833L', 'HMC5833L'];
+sensorTypes = ["temperature", ...
+            'accelerometer', 'accelerometer', 'accelerometer', ...
+            'gyroscope', 'gyroscope', 'gyroscope', ...
+            'magnetometer', 'magnetometer', 'magnetometer'];
+axes = ['T', ...
+    'X', 'Y', 'Z', ...
+    'X', 'Y', 'Z', ...
+    'X', 'Y', 'Z'];
+
 dataCombined = [
-    "MPU6050", "temperature", "T", temperatureTimeStats, temperatureStats, temperatureLinearity;
+    temperatureStats, temperatureLinearity, temperatureTimeStats;
 
-    "MPU6050", "accelerometer", "X", accelTimeStats, accelXStats, accelXLinearity;
-    "MPU6050", "accelerometer", "Y", accelTimeStats, accelYStats, accelYLinearity;
-    "MPU6050", "accelerometer", "Z", accelTimeStats, accelZStats, accelZLinearity;
+    accelXStats, accelXLinearity, accelTimeStats;
+    accelYStats, accelYLinearity, accelTimeStats;
+    accelZStats, accelZLinearity, accelTimeStats;
     
-    "MPU6050", "gyroscope", "X", gyroTimeStats, gyroXStats, gyroXLinearity;
-    "MPU6050", "gyroscope", "Y", gyroTimeStats, gyroYStats, gyroYLinearity;
-    "MPU6050", "gyroscope", "Z", gyroTimeStats, gyroZStats, gyroZLinearity;
+    gyroXStats, gyroXLinearity, gyroTimeStats;
+    gyroYStats, gyroYLinearity, gyroTimeStats;
+    gyroZStats, gyroZLinearity, gyroTimeStats;
         
-    "HMC5833L", "magnetometer", "X", magnetometerTimeStats, magnetometerXStats, magnetometerXLinearity;
-    "HMC5833L", "magnetometer", "Y", magnetometerTimeStats, magnetometerYStats, magnetometerYLinearity;
-    "HMC5833L", "magnetometer", "Z", magnetometerTimeStats, magnetometerZStats, magnetometerZLinearity;
+    magnetometerXStats, magnetometerXLinearity, magnetometerTimeStats;
+    magnetometerYStats, magnetometerYLinearity, magnetometerTimeStats;
+    magnetometerZStats, magnetometerZLinearity, magnetometerTimeStats;
 ];
-T = array2table(dataCombined, 'VariableNames', {
-    'sensor', 'type', 'axis', ...
-    't_min', 't_max', 't_range', 'freq', 'sample_rate_mean', 'sample_rate_std', ...
-    'v_min', 'v_max', 'v_range', 'v_diff_mean', 'v_diff_std', 'v_mean', 'v_std_dev', ...
-    'linear_slope', 'linear_intercept', 'linear_RMSE', 'linear_R_squared'
-    })
 
-writetable(T, 'stats.csv')
+T = array2table(dataCombined, 'VariableNames', {
+    % 'sensor', 'type', 'axis', ...
+    'v_min', 'v_max', 'v_range', 'v_diff_mean', 'v_diff_std', 'v_mean', 'v_std_dev', ...
+    'linear_slope', 'linear_intercept', 'linear_RMSE', 'linear_R_squared', ...
+    't_min', 't_max', 't_range', 'freq_mean', 'sample_rate_mean', 'sample_rate_std'
+    });
+
+% Write CSV manually to control formatting
+fid = fopen('stats.csv', 'w');
+fprintf(fid, 'sensor,type,axis,v_min,v_max,v_range,v_diff_mean,v_diff_std,v_mean,v_std_dev,linear_slope,linear_intercept,linear_RMSE,linear_R_squared,t_min,t_max,t_range,freq_mean,sample_rate_mean,sample_rate_std\n');
+for row = 1:height(T)
+    fprintf(fid, '%s,%s,%s,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.2f,%.6g,%.6g\n', ...
+        sensors(:, row), sensorTypes(row), axes(row), ...
+        T.v_min(row), T.v_max(row), T.v_range(row), T.v_diff_mean(row), T.v_diff_std(row), T.v_mean(row), T.v_std_dev(row), ...
+        T.linear_slope(row), T.linear_intercept(row), T.linear_RMSE(row), T.linear_R_squared(row), ...
+        T.t_min(row), T.t_max(row), T.t_range(row), T.freq_mean(row), T.sample_rate_mean(row), T.sample_rate_std(row));
+end
+fclose(fid);
+
+% Read it back for visualization.
+readtable('stats.csv')
 
 function [t_min, t_max, t_duration, sampling_frequency, sampling_rate, sampling_rate_std] = timeStats(buffer)
     t_min = buffer(1, 1);
