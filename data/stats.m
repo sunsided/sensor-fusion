@@ -121,7 +121,7 @@ T = array2table(dataCombined, 'VariableNames', {
     });
 
 % Write CSV manually to control formatting
-fid = fopen('stats.csv', 'w');
+fid = fopen('sensor-stats.csv', 'w');
 fprintf(fid, 'sensor,type,axis,v_min,v_max,v_range,v_diff_mean,v_diff_std,v_mean,v_std_dev,linear_slope,linear_intercept,linear_RMSE,linear_R_squared,t_min,t_max,t_range,freq_mean,sample_rate_mean,sample_rate_std\n');
 for row = 1:height(T)
     fprintf(fid, '%s,%s,%s,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.2f,%.6g,%.6g\n', ...
@@ -133,7 +133,7 @@ end
 fclose(fid);
 
 % Read it back for visualization.
-readtable('stats.csv')
+readtable('sensor-stats.csv')
 
 %% Covariances
 
@@ -145,6 +145,22 @@ magnetometerInterp = fillmissing(magnetometerInterp, 'next');
 sensorMatrix = [ temperatureBuffer(:, 2) accelBuffer(:, 2:end), gyroBuffer(:, 2:end), magnetometerInterp ];
 sensorMatrixNormalized = zscore(sensorMatrix);
 covarianceMatrix = cov(sensorMatrixNormalized);
+
+% Write CSV manually to control formatting
+fid = fopen('sensor-covariances.csv', 'w');
+fprintf(fid, 'pair,temperature,accel_x,accel_y,accel_z,gyro_x,gyro_y,gyro_z,magnetometer_x,magnetometer_y,magnetometer_z\n');
+row_names = ["temperature", "accel_x", "accel_y", "accel_z", "gyro_x", "gyro_y", "gyro_z", "magnetometer_x", "magnetometer_y", "magnetometer_z"];
+size = size(covarianceMatrix);
+for row = 1:size(1)
+    row_name = row_names(row);
+    fprintf(fid, '%s,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g,%.6g\n', ...
+        row_name, ...
+        covarianceMatrix(row, 1), ...
+        covarianceMatrix(row, 2), covarianceMatrix(row, 3), covarianceMatrix(row, 4), ...
+        covarianceMatrix(row, 5), covarianceMatrix(row, 6), covarianceMatrix(row, 7), ...
+        covarianceMatrix(row, 8), covarianceMatrix(row, 9), covarianceMatrix(row, 10));
+end
+fclose(fid);
 
 close all;
 
@@ -221,6 +237,8 @@ saveas(gcf, 'sensor-readings-fine.png');
 
 set(gcf, 'Position', [100, 100, 1080, 1080]);
 saveas(gcf, 'sensor-readings.png');
+
+close all;
 
 %% Helper functions
 
