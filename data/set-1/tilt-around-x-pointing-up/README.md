@@ -45,6 +45,8 @@ The raw data is available in CSV and Parquet formats:
 
 See [`sensor-stats.csv`](sensor-stats.csv) for summary statistics in tabular form. Below is a visualization of the sensor readings:
 
+![Sensor Readings (3D)](sensor-readings-3d.png)
+
 ![Sensor Readings](sensor-readings.png)
 
 See also [`sensor-readings-fine.png`](sensor-readings-fine.png).
